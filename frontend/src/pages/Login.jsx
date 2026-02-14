@@ -7,6 +7,7 @@ const Login = () => {
         email: '',
         password: '',
     });
+    // const { login, setUser } = useContext(AuthContext);
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
     const [error, setError] = useState(null);
@@ -22,14 +23,50 @@ const Login = () => {
         setError(null);
         setIsLoading(true);
         try {
-            await login(email, password);
-            navigate('/profile');
+            const userData=await login(email, password);
+            if (userData.role === 'volunteer') {
+                navigate('/dashboard');
+            } else if (userData.role === 'ngo') {
+                navigate('/profile');
+            } else {
+                navigate('/');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {
             setIsLoading(false);
         }
     };
+//     const onSubmit = async (e) => {
+//     e.preventDefault();
+//     setError(null);
+//     setIsLoading(true);
+
+//     try {
+//         // 🔥 TEMP MOCK LOGIN (No backend required)
+//         const mockUser = {
+//             name: "Adeela Azeez",
+//             email: email,
+//             role: email.includes("ngo") ? "ngo" : "volunteer",
+//             skills: ["React", "UI/UX", "Problem Solving"]
+//         };
+//         setUser(mockUser);
+//         // Simulate small delay
+//         await new Promise((resolve) => setTimeout(resolve, 800));
+
+//         // Redirect based on role
+//         if (mockUser.role === "volunteer") {
+//             navigate("/dashboard");
+//         } else {
+//             navigate("/profile");
+//         }
+
+//     } catch (err) {
+//         setError("Login failed.");
+//     } finally {
+//         setIsLoading(false);
+//     }
+// };
 
     return (
         <div className="auth-container">

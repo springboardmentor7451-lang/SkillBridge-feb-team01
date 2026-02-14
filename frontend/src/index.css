@@ -819,3 +819,8 @@ img {
   font-size: 1.1rem;
   border-radius: var(--radius-full);
 }
+
+/* ===== DASHBOARD WIDE LAYOUT ===== */
+.dashboard-page .profile-card {
+  max-width: 1200px;
+}

@@ -10,6 +10,10 @@ import About from './pages/About';
 import { AuthProvider } from './context/AuthContext';
 import { useContext } from 'react';
 import AuthContext from './context/AuthContext';
+import VolunteerDashboard from './pages/VolunteerDashboard';
+import EditProfile from './pages/EditProfile';
+import Applications from './pages/Applications';
+import Chat from './pages/Chat';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -40,6 +44,10 @@ function App() {
               }
             />
             <Route path="/" element={<LandingPage />} />
+            <Route path="/dashboard" element={<VolunteerDashboard />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/applications" element={<Applications />} />
+            <Route path="/chat" element={<Chat />} />
           </Routes>
         </div>
       </AuthProvider>
