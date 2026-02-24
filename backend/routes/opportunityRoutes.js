@@ -1,33 +1,32 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
-import { authorize } from "../middleware/roleMiddleware.js";
-import {
-    validateCreate,
-    validateUpdate,
-    validateObjectId,
-} from "../middleware/opportunityValidator.js";
-import {
-    createOpportunity,
-    getMyOpportunities,
-    updateOpportunity,
-    deleteOpportunity,
-} from "../controllers/opportunityController.js";
+import { ngoOnly } from "../middleware/ngoMiddleware.js";
+
+// TEMP controllers (replace when CRUD is implemented)
+const createOpportunity = (req, res) => {
+  res.json({ message: "Opportunity created successfully" });
+};
+
+const getAllOpportunities = (req, res) => {
+  res.json({ message: "All opportunities fetched" });
+};
+
+const updateOpportunity = (req, res) => {
+  res.json({ message: "Opportunity updated successfully" });
+};
+
+const deleteOpportunity = (req, res) => {
+  res.json({ message: "Opportunity deleted successfully" });
+};
 
 const router = express.Router();
 
-// All routes require JWT auth + NGO role
-router.use(protect, authorize("ngo"));
+// Public route
+router.get("/", getAllOpportunities);
 
-// POST /api/opportunities — Create a new opportunity
-router.post("/", validateCreate, createOpportunity);
-
-// GET /api/opportunities/my — Get all opportunities by logged-in NGO
-router.get("/my", getMyOpportunities);
-
-// PUT /api/opportunities/:id — Update an opportunity
-router.put("/:id", validateObjectId, validateUpdate, updateOpportunity);
-
-// DELETE /api/opportunities/:id — Delete an opportunity
-router.delete("/:id", validateObjectId, deleteOpportunity);
+// NGO Protected routes
+router.post("/", protect, ngoOnly, createOpportunity);
+router.put("/:id", protect, ngoOnly, updateOpportunity);
+router.delete("/:id", protect, ngoOnly, deleteOpportunity);
 
 export default router;
