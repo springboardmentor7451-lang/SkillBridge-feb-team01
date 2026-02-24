@@ -21,6 +21,7 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
+import CreateOpportunity from './pages/CreateOpportunity';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Ant Design global theme
@@ -145,6 +146,14 @@ function App() {
                 <DashboardRoute allowedRoles={['ngo']} pageTitle="Manage Opportunities">
                   <ManageOpportunities />
                 </DashboardRoute>
+              }
+            />
+            <Route
+              path="/create-opportunity"
+              element={
+                <ProtectedRoute allowedRoles={['ngo']}>
+                  <CreateOpportunity />
+                </ProtectedRoute>
               }
             />
 
