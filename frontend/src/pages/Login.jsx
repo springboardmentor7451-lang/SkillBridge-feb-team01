@@ -1,28 +1,29 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, Alert } from 'antd';
-import { MailOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
-import './Login.css';
-
-const { Title, Paragraph } = Typography;
 
 const Login = () => {
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+    });
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const onSubmit = async (values) => {
+    const { email, password } = formData;
+
+    const onChange = (e) =>
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    const onSubmit = async (e) => {
+        e.preventDefault();
         setError(null);
         setIsLoading(true);
         try {
-            const userData = await login(values.email, values.password);
-            if (userData.role === 'ngo') {
-                navigate('/manage-opportunities');
-            } else {
-                navigate('/profile');
-            }
+            await login(email, password);
+            navigate('/profile');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {
@@ -31,74 +32,64 @@ const Login = () => {
     };
 
     return (
-        <div className="login-container">
-            <Card className="login-card">
-                <div className="login-header">
-                    <div className="login-icon-top">
-                        <UserOutlined />
-                    </div>
-                    <Title level={2}>Welcome Back</Title>
-                    <Paragraph type="secondary">Sign in to continue to SkillBridge</Paragraph>
-                </div>
+        <div className="auth-container">
+            <div className="auth-form">
+                <h2>Welcome Back</h2>
+                <p className="auth-subtitle">Sign in to continue to SkillBridge</p>
 
                 {error && (
-                    <Alert
-                        message="Login Error"
-                        description={error}
-                        type="error"
-                        showIcon
-                        className="auth-alert"
-                    />
+                    <div className="alert alert-error">
+                        <span>⚠️</span>
+                        {error}
+                    </div>
                 )}
 
-                <Form
-                    name="login_form"
-                    layout="vertical"
-                    onFinish={onSubmit}
-                    className="login-form-antd"
-                    size="large"
-                >
-                    <Form.Item
-                        name="email"
-                        label="Email Address"
-                        rules={[
-                            { required: true, message: 'Please input your Email!' },
-                            { type: 'email', message: 'Please enter a valid email!' }
-                        ]}
-                    >
-                        <Input prefix={<MailOutlined className="site-form-item-icon" />} placeholder="you@example.com" />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="password"
-                        label="Password"
-                        rules={[{ required: true, message: 'Please input your Password!' }]}
-                    >
-                        <Input.Password
-                            prefix={<LockOutlined className="site-form-item-icon" />}
-                            placeholder="Enter your password"
+                <form onSubmit={onSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="email">Email Address</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={email}
+                            onChange={onChange}
+                            placeholder="you@example.com"
+                            required
                         />
-                    </Form.Item>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            value={password}
+                            onChange={onChange}
+                            placeholder="Enter your password"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="btn"
+                        style={{ width: '100%', marginTop: '8px' }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2, marginRight: 8 }}></span>
+                                Signing in...
+                            </>
+                        ) : (
+                            'Sign In →'
+                        )}
+                    </button>
+                </form>
 
-                    <Form.Item>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            className="login-form-button"
-                            loading={isLoading}
-                            block
-                        >
-                            {isLoading ? 'Signing in...' : 'Sign In →'}
-                        </Button>
-                    </Form.Item>
-                </Form>
-
-                <div className="auth-footer">
-                    <Paragraph>
-                        Don't have an account? <Link to="/register">Create one</Link>
-                    </Paragraph>
-                </div>
-            </Card>
+                <p className="auth-link">
+                    Don't have an account? <Link to="/register">Create one</Link>
+                </p>
+            </div>
         </div>
     );
 };

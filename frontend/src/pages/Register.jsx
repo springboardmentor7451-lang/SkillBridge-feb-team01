@@ -1,52 +1,44 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, Radio, Typography, Alert, Divider } from 'antd';
-import { UserOutlined, MailOutlined, LockOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
-import './Register.css'; // assuming custom styles might be needed later, though mostly antd
-
-const { Title, Paragraph } = Typography;
-const { TextArea } = Input;
 
 const Register = () => {
-    const [role, setRole] = useState('volunteer');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'volunteer',
+        skills: '',
+        location: '',
+        bio: '',
+        organization_name: '',
+        organization_description: '',
+        website_url: ''
+    });
+
     const { register } = useContext(AuthContext);
     const navigate = useNavigate();
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Ant Design Form instance
-    const [form] = Form.useForm();
+    const { name, email, password, role, skills, location, bio, organization_name, organization_description, website_url } = formData;
 
-    const handleRoleChange = (e) => {
-        setRole(e.target.value);
-        // Clear NGO specific fields if switching to volunteer
-        if (e.target.value === 'volunteer') {
-            form.setFieldsValue({
-                organization_name: undefined,
-                organization_description: undefined,
-                website_url: undefined
-            });
-        }
-    };
+    const onChange = (e) =>
+        setFormData({ ...formData, [e.target.name]: e.target.value });
 
-    const onSubmit = async (values) => {
+    const onSubmit = async (e) => {
+        e.preventDefault();
         setError(null);
         setIsLoading(true);
         try {
-            const dataToSubmit = { ...values, role };
-
-            // Process skills if provided as string
-            if (dataToSubmit.skills && typeof dataToSubmit.skills === 'string') {
-                dataToSubmit.skills = dataToSubmit.skills.split(',').map(s => s.trim());
+            const dataToSubmit = { ...formData };
+            if (dataToSubmit.skills) {
+                if (typeof dataToSubmit.skills === 'string') {
+                    dataToSubmit.skills = dataToSubmit.skills.split(',').map(s => s.trim());
+                }
             }
-
             await register(dataToSubmit);
-            if (role === 'ngo') {
-                navigate('/manage-opportunities');
-            } else {
-                navigate('/opportunities');
-            }
+            navigate('/profile');
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
@@ -56,148 +48,166 @@ const Register = () => {
 
     return (
         <div className="register-container">
-            <Card className="register-card">
-                <div className="register-header">
-                    <Title level={2}>Create Account</Title>
-                    <Paragraph type="secondary">Join SkillBridge and make a difference</Paragraph>
-                </div>
+            <div className="register-form">
+                <h2>Create Account</h2>
+                <p className="auth-subtitle">Join SkillBridge and make a difference</p>
 
                 {error && (
-                    <Alert
-                        message="Registration Error"
-                        description={error}
-                        type="error"
-                        showIcon
-                        className="auth-alert"
-                    />
+                    <div className="alert alert-error">
+                        <span>⚠️</span>
+                        {error}
+                    </div>
                 )}
 
-                <div className="role-selector">
-                    <Radio.Group
-                        value={role}
-                        onChange={handleRoleChange}
-                        buttonStyle="solid"
-                        size="large"
-                        className="role-radio-group"
+                {/* Role Toggle */}
+                <div className="role-toggle">
+                    <button
+                        type="button"
+                        className={`role-toggle-btn ${role === 'volunteer' ? 'active' : ''}`}
+                        onClick={() => setFormData({ ...formData, role: 'volunteer' })}
                     >
-                        <Radio.Button value="volunteer">🙋 Volunteer</Radio.Button>
-                        <Radio.Button value="ngo">🏢 NGO / Organization</Radio.Button>
-                    </Radio.Group>
+                        🙋 Volunteer
+                    </button>
+                    <button
+                        type="button"
+                        className={`role-toggle-btn ${role === 'ngo' ? 'active' : ''}`}
+                        onClick={() => setFormData({ ...formData, role: 'ngo' })}
+                    >
+                        🏢 NGO / Organization
+                    </button>
                 </div>
 
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={onSubmit}
-                    initialValues={{ role: 'volunteer' }}
-                    className="register-form-antd"
-                >
-                    <Form.Item
-                        name="name"
-                        label="Full Name"
-                        rules={[{ required: true, message: 'Please enter your full name!' }]}
-                    >
-                        <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="John Doe" size="large" />
-                    </Form.Item>
+                <form onSubmit={onSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="name">Full Name</label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            value={name}
+                            onChange={onChange}
+                            placeholder="John Doe"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="reg-email">Email Address</label>
+                        <input
+                            type="email"
+                            id="reg-email"
+                            name="email"
+                            value={email}
+                            onChange={onChange}
+                            placeholder="you@example.com"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="reg-password">Password</label>
+                        <input
+                            type="password"
+                            id="reg-password"
+                            name="password"
+                            value={password}
+                            onChange={onChange}
+                            placeholder="Create a strong password"
+                            required
+                        />
+                    </div>
 
-                    <Form.Item
-                        name="email"
-                        label="Email Address"
-                        rules={[
-                            { required: true, message: 'Please enter your email!' },
-                            { type: 'email', message: 'Please enter a valid email address!' }
-                        ]}
-                    >
-                        <Input prefix={<MailOutlined className="site-form-item-icon" />} placeholder="you@example.com" size="large" />
-                    </Form.Item>
+                    <div className="form-divider">Personal Details</div>
 
-                    <Form.Item
-                        name="password"
-                        label="Password"
-                        rules={[
-                            { required: true, message: 'Please enter your password!' },
-                            { min: 6, message: 'Password must be at least 6 characters long!' }
-                        ]}
-                    >
-                        <Input.Password prefix={<LockOutlined className="site-form-item-icon" />} placeholder="Create a strong password" size="large" />
-                    </Form.Item>
-
-                    <Divider plain>Personal Details</Divider>
-
-                    <Form.Item
-                        name="location"
-                        label="Location"
-                    >
-                        <Input prefix={<EnvironmentOutlined className="site-form-item-icon" />} placeholder="City, Country" size="large" />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="bio"
-                        label="Bio"
-                    >
-                        <TextArea placeholder="Tell us about yourself..." autoSize={{ minRows: 2, maxRows: 6 }} size="large" />
-                    </Form.Item>
+                    <div className="form-group">
+                        <label htmlFor="location">Location</label>
+                        <input
+                            type="text"
+                            id="location"
+                            name="location"
+                            value={location}
+                            onChange={onChange}
+                            placeholder="City, Country"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="bio">Bio</label>
+                        <textarea
+                            id="bio"
+                            name="bio"
+                            value={bio}
+                            onChange={onChange}
+                            placeholder="Tell us about yourself..."
+                        ></textarea>
+                    </div>
 
                     {role === 'volunteer' && (
-                        <Form.Item
-                            name="skills"
-                            label="Skills"
-                            tooltip="Enter comma separated values"
-                        >
-                            <Input placeholder="e.g. Teaching, Coding, First Aid" size="large" />
-                        </Form.Item>
+                        <div className="form-group">
+                            <label htmlFor="skills">Skills</label>
+                            <input
+                                type="text"
+                                id="skills"
+                                name="skills"
+                                value={skills}
+                                onChange={onChange}
+                                placeholder="e.g. Teaching, Coding, First Aid"
+                            />
+                        </div>
                     )}
 
                     {role === 'ngo' && (
                         <>
-                            <Divider plain>Organization Info</Divider>
-
-                            <Form.Item
-                                name="organization_name"
-                                label="Organization Name"
-                                rules={[{ required: true, message: 'Please enter the organization name!' }]}
-                            >
-                                <Input placeholder="Your Organization Name" size="large" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="organization_description"
-                                label="Organization Description"
-                                rules={[{ required: true, message: 'Please describe your organization!' }]}
-                            >
-                                <TextArea placeholder="What does your organization do?" autoSize={{ minRows: 3, maxRows: 6 }} size="large" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="website_url"
-                                label="Website URL"
-                                rules={[{ required: true, message: 'Please enter the website URL!' }]}
-                            >
-                                <Input placeholder="https://example.org" size="large" />
-                            </Form.Item>
+                            <div className="form-divider">Organization Info</div>
+                            <div className="form-group">
+                                <label htmlFor="org-name">Organization Name</label>
+                                <input
+                                    type="text"
+                                    id="org-name"
+                                    name="organization_name"
+                                    value={organization_name}
+                                    onChange={onChange}
+                                    placeholder="Your Organization"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="org-desc">Organization Description</label>
+                                <textarea
+                                    id="org-desc"
+                                    name="organization_description"
+                                    value={organization_description}
+                                    onChange={onChange}
+                                    placeholder="What does your organization do?"
+                                    required
+                                ></textarea>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="website">Website URL</label>
+                                <input
+                                    type="text"
+                                    id="website"
+                                    name="website_url"
+                                    value={website_url}
+                                    onChange={onChange}
+                                    placeholder="https://example.org"
+                                    required
+                                />
+                            </div>
                         </>
                     )}
 
-                    <Form.Item>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            className="register-form-button"
-                            size="large"
-                            loading={isLoading}
-                            block
-                        >
-                            {isLoading ? 'Creating Account...' : 'Create Account →'}
-                        </Button>
-                    </Form.Item>
-                </Form>
+                    <button
+                        type="submit"
+                        className="btn"
+                        style={{ width: '100%', marginTop: '8px' }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Creating Account...' : 'Create Account →'}
+                    </button>
+                </form>
 
-                <div className="auth-footer">
-                    <Paragraph>
-                        Already have an account? <Link to="/login">Sign in</Link>
-                    </Paragraph>
-                </div>
-            </Card>
+                <p className="auth-link">
+                    Already have an account? <Link to="/login">Sign in</Link>
+                </p>
+            </div>
         </div>
     );
 };

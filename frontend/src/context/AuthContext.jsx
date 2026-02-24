@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUser = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/users/profile`);
+            const res = await axios.get(`${API_BASE}/users/me`);
             setUser(res.data);
         } catch (error) {
             console.error('Error fetching user', error);
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, setUser, token, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );

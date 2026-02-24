@@ -1,4 +1,1 @@
-/* App-level layout helpers */
-.page-wrapper {
-    min-height: calc(100vh - 64px);
-}
+/* App-level styles - intentionally minimal, design system is in index.css */
