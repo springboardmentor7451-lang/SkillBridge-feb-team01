@@ -21,7 +21,6 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
-import ProtectedRoute from './components/ProtectedRoute';
 
 // Ant Design global theme
 const antdTheme = {
@@ -114,7 +113,7 @@ function App() {
       <Router>
         <AuthProvider>
           <Routes>
-            {/* ── Public routes ── */}
+            {/* Public routes */}
             <Route path="/" element={<LandingRoute />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
@@ -122,7 +121,7 @@ function App() {
             <Route path="/opportunities" element={<SmartOpportunityRoute />} />
             <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
 
-            {/* ── Dashboard routes (sidebar layout) ── */}
+            {/* Dashboard routes */}
             <Route
               path="/profile"
               element={

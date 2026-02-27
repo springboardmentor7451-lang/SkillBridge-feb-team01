@@ -4,9 +4,13 @@
 
 .ngo-page {
   width: 100%;
+  padding: 24px;
 }
 
-/* Info card */
+/* ========================
+   Left Info Card
+======================== */
+
 .ngo-info-card {
   border-radius: 16px !important;
   border: 1px solid #e2e8f0 !important;
@@ -39,7 +43,10 @@
   flex-shrink: 0;
 }
 
-/* Form card */
+/* ========================
+   Right Form Card
+======================== */
+
 .ngo-form-card {
   border-radius: 16px !important;
   border: 1px solid #e2e8f0 !important;
@@ -50,8 +57,43 @@
   padding: 28px !important;
 }
 
-/* Label styling */
-.ngo-form-card .ant-form-item-label>label {
+/* ========================
+   Form Label Styling
+======================== */
+
+.ngo-form-card .ant-form-item-label > label {
   font-weight: 600 !important;
   color: #374151 !important;
+}
+
+/* ========================
+   Button Styling
+======================== */
+
+.ngo-form-card .ant-btn-primary {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+.ngo-form-card .ant-btn {
+  border-radius: 8px !important;
+}
+
+/* ========================
+   Responsive
+======================== */
+
+@media (max-width: 768px) {
+  .ngo-page {
+    padding: 16px;
+  }
+
+  .ngo-info-card,
+  .ngo-form-card {
+    border-radius: 12px !important;
+  }
+
+  .ngo-form-card .ant-card-body {
+    padding: 20px !important;
+  }
 }
