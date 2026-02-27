@@ -1,7 +1,30 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
 const API_BASE = 'http://127.0.0.1:5000/api';
+
+// Mock user data for development
+const mockNGOUser = {
+    id: 'ngo-001',
+    name: 'Green Earth Foundation',
+    email: 'contact@greenearth.org',
+    role: 'ngo',
+    organizationName: 'Green Earth Foundation',
+    organizationDescription: 'Environmental conservation and education'
+};
+
+const mockVolunteerUser = {
+    id: 'vol-001',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    role: 'volunteer',
+    location: 'San Francisco, CA',
+    skills: ['Teaching', 'Environmental Conservation', 'Community Outreach']
+};
+
+
+const USE_MOCK_AUTH = true;
+const MOCK_ROLE = 'ngo';
 
 const AuthContext = createContext();
 
@@ -11,7 +34,12 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (token) {
+        if (USE_MOCK_AUTH) {
+            // Use mock authentication for development
+            const mockUser = MOCK_ROLE === 'ngo' ? mockNGOUser : mockVolunteerUser;
+            setUser(mockUser);
+            setLoading(false);
+        } else if (token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             fetchUser();
         } else {
@@ -57,11 +85,33 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    // Compute isAuthenticated and role
+    const isAuthenticated = user !== null && user.role !== undefined;
+    const role = user?.role || null;
+
     return (
-        <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+        <AuthContext.Provider value={{
+            user,
+            token,
+            login,
+            register,
+            logout,
+            loading,
+            isAuthenticated,
+            role
+        }}>
             {children}
         </AuthContext.Provider>
     );
+};
+
+// Custom hook for easy context consumption
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };
 
 export default AuthContext;
