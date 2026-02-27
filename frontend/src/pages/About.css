@@ -1,0 +1,147 @@
+/* =====================================================
+   About Page – SkillBridge Professional Redesign
+   ===================================================== */
+
+.about-layout {
+    background: #f8fafc !important;
+}
+
+/* ── Hero ── */
+.about-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0a2a4a 100%);
+    padding: 90px 0 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-hero::before {
+    content: '';
+    position: absolute;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.12), transparent 70%);
+    top: -80px;
+    right: -80px;
+    pointer-events: none;
+}
+
+.about-hero::after {
+    content: '';
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(15, 111, 255, 0.12), transparent 70%);
+    bottom: -60px;
+    left: -40px;
+    pointer-events: none;
+}
+
+.about-hero .container {
+    position: relative;
+    z-index: 1;
+}
+
+.about-hero-title {
+    font-size: clamp(2rem, 4.5vw, 3.2rem) !important;
+    font-weight: 900 !important;
+    color: #fff !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 16px !important;
+}
+
+.highlight-text {
+    background: linear-gradient(135deg, #60a5fa, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-hero-subtitle {
+    font-size: 1.05rem !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    max-width: 540px;
+    margin: 0 auto 36px !important;
+    line-height: 1.7 !important;
+}
+
+.about-cta-btn {
+    background: linear-gradient(135deg, #0f6fff, #06b6d4) !important;
+    border: none !important;
+    height: 50px !important;
+    padding: 0 36px !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 28px rgba(15, 111, 255, 0.4) !important;
+    transition: transform 0.2s !important;
+}
+
+.about-cta-btn:hover {
+    transform: translateY(-2px) !important;
+}
+
+/* ── Mission Section ── */
+.about-mission-section {
+    padding: 80px 0;
+    background: #f8fafc;
+}
+
+.about-mission-section h2.ant-typography {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+
+/* ── Value Cards ── */
+.value-card {
+    border-radius: 16px !important;
+    border: 1px solid #e8f0fe !important;
+    transition: box-shadow 0.28s, transform 0.28s !important;
+    height: 100% !important;
+}
+
+.value-card:hover {
+    box-shadow: 0 12px 40px rgba(15, 111, 255, 0.15) !important;
+    transform: translateY(-4px) !important;
+}
+
+.value-card .ant-card-body {
+    padding: 28px 24px !important;
+}
+
+.value-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, rgba(15, 111, 255, 0.1), rgba(6, 182, 212, 0.1));
+    color: #0f6fff;
+    margin-bottom: 8px;
+}
+
+/* ── CTA Banner ── */
+.about-cta-section {
+    padding: 90px 0;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0a2662 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.about-cta-section::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(15, 111, 255, 0.2), transparent 70%);
+    top: -100px;
+    left: -100px;
+    pointer-events: none;
+}

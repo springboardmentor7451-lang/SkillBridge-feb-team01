@@ -1,188 +1,295 @@
-import { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Typography,
+  notification,
+  Divider,
+  Row,
+  Col,
+  Space,
+  Avatar,
+  Spin,
+} from 'antd';
+import {
+  BankOutlined,
+  GlobalOutlined,
+  EnvironmentOutlined,
+  InfoCircleOutlined,
+  CheckCircleOutlined,
+  SaveOutlined,
+} from '@ant-design/icons';
+import axios from 'axios';
+import AuthContext from '../context/AuthContext';
 import './NGOProfileForm.css';
 
+const { Title, Paragraph, Text } = Typography;
+const { TextArea } = Input;
+
+const benefits = [
+  'Free to register — no fees ever',
+  'Access to verified volunteer pool',
+  'Easy opportunity management tools',
+  'Direct messaging with applicants',
+  'Analytics and impact reporting',
+];
+
 function NGOProfileForm() {
-  const [formData, setFormData] = useState({
-    organizationName: '',
-    description: '',
-    websiteUrl: '',
-    location: '',
-    shortBio: ''
-  });
+  const [form] = Form.useForm();
+  const { user, loading, setUser } = useContext(AuthContext);
+  const [saving, setSaving] = useState(false);
 
-  const [errors, setErrors] = useState({});
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
+  // Pre-fill form from logged-in user's profile data
+  useEffect(() => {
+    if (user) {
+      form.setFieldsValue({
+        organizationName: user.organization_name || '',
+        description: user.organization_description || '',
+        websiteUrl: user.website_url || '',
+        location: user.location || '',
+        shortBio: user.bio || '',
       });
     }
-  };
+  }, [user, form]);
 
-  const validateForm = () => {
-    const newErrors = {};
+  const handleSubmit = async (values) => {
+    setSaving(true);
+    try {
+      const payload = {
+        organization_name: values.organizationName,
+        organization_description: values.description,
+        website_url: values.websiteUrl,
+        location: values.location,
+        bio: values.shortBio,
+      };
 
-    // Organization Name validation
-    if (!formData.organizationName.trim()) {
-      newErrors.organizationName = 'Organization name is required';
-    } else if (formData.organizationName.trim().length < 3) {
-      newErrors.organizationName = 'Organization name must be at least 3 characters';
-    }
+      const res = await axios.put(
+        'http://127.0.0.1:5000/api/users/profile',
+        payload
+      );
 
-    // Description validation
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.trim().length < 20) {
-      newErrors.description = 'Description must be at least 20 characters';
-    }
-
-    // Website URL validation
-    if (!formData.websiteUrl.trim()) {
-      newErrors.websiteUrl = 'Website URL is required';
-    } else {
-      try {
-        const url = new URL(formData.websiteUrl);
-        // Ensure it has http/https protocol
-        if (!url.protocol.startsWith('http')) {
-          newErrors.websiteUrl = 'Please enter a valid URL';
-        }
-      } catch {
-        newErrors.websiteUrl = 'Please enter a valid URL';
+      if (typeof setUser === 'function') {
+        setUser(res.data);
       }
-    }
 
-    // Location validation
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
+      notification.success({
+        message: 'Profile Saved!',
+        description: 'Your NGO profile has been successfully updated.',
+        icon: <CheckCircleOutlined style={{ color: '#10b981' }} />,
+      });
+    } catch (err) {
+      console.error('Save profile error:', err);
+      notification.error({
+        message: 'Save Failed',
+        description:
+          err?.response?.data?.message ||
+          'Could not save profile. Please try again.',
+      });
+    } finally {
+      setSaving(false);
     }
-
-    return newErrors;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const validationErrors = validateForm();
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    // Success - log data and clear form
-    console.log('NGO Profile Form Submitted:', formData);
-    
-    setFormData({
-      organizationName: '',
-      description: '',
-      websiteUrl: '',
-      location: '',
-      shortBio: ''
-    });
-    setErrors({});
-  };
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 300,
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
-    <div className="page-wrapper">
-      <div className="ngo-profile-form-container">
-        <h1 className="form-heading">NGO Profile Registration</h1>
-        <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="organizationName" className="form-label">
-            Organization Name
-          </label>
-          <input
-            type="text"
-            id="organizationName"
-            name="organizationName"
-            value={formData.organizationName}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-          {errors.organizationName && (
-            <div className="error-message">{errors.organizationName}</div>
-          )}
-        </div>
+    <div className="ngo-page">
+      <Row gutter={[24, 24]}>
+        {/* Left Info Panel */}
+        <Col xs={24} md={8} lg={7}>
+          <Card className="ngo-info-card">
+            <div className="ngo-info-top">
+              <Avatar
+                size={56}
+                style={{
+                  background:
+                    'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                }}
+              >
+                <BankOutlined />
+              </Avatar>
 
-        <div className="form-group">
-          <label htmlFor="description" className="form-label">
-            Organization Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className="form-textarea"
-            rows="4"
-          />
-          {errors.description && (
-            <div className="error-message">{errors.description}</div>
-          )}
-        </div>
+              <Title level={4} style={{ margin: '16px 0 6px' }}>
+                NGO Profile
+              </Title>
 
-        <div className="form-group">
-          <label htmlFor="websiteUrl" className="form-label">
-            Website URL
-          </label>
-          <input
-            type="text"
-            id="websiteUrl"
-            name="websiteUrl"
-            value={formData.websiteUrl}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-          {errors.websiteUrl && (
-            <div className="error-message">{errors.websiteUrl}</div>
-          )}
-        </div>
+              <Paragraph type="secondary" style={{ marginBottom: 24 }}>
+                {user?.organization_name
+                  ? `Editing profile for ${user.organization_name}`
+                  : 'Complete your profile to attract the best volunteers.'}
+              </Paragraph>
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="location" className="form-label">
-            Location
-          </label>
-          <input
-            type="text"
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-          {errors.location && (
-            <div className="error-message">{errors.location}</div>
-          )}
-        </div>
+            <Divider style={{ margin: '0 0 20px' }} />
 
-        <div className="form-group">
-          <label htmlFor="shortBio" className="form-label">
-            Short Bio
-          </label>
-          <textarea
-            id="shortBio"
-            name="shortBio"
-            value={formData.shortBio}
-            onChange={handleInputChange}
-            className="form-textarea"
-            rows="3"
-          />
-        </div>
+            <div>
+              {benefits.map((item, i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <CheckCircleOutlined
+                    style={{ color: '#10b981', marginRight: 8 }}
+                  />
+                  <Text>{item}</Text>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
 
-        <button type="submit" className="submit-button">
-          Submit Profile
-        </button>
-      </form>
-    </div>
+        {/* Right Form Panel */}
+        <Col xs={24} md={16} lg={17}>
+          <Card className="ngo-form-card">
+            <Title level={4} style={{ marginBottom: 4 }}>
+              Organization Information
+            </Title>
+
+            <Paragraph type="secondary" style={{ marginBottom: 28 }}>
+              This information is pre-filled from your registration.
+              Update as needed and save.
+            </Paragraph>
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              scrollToFirstError
+              size="large"
+            >
+              <Divider plain>Basic Details</Divider>
+
+              <Form.Item
+                name="organizationName"
+                label="Organization Name"
+                rules={[
+                  { required: true, message: 'Organization name is required.' },
+                  { min: 3, message: 'Must be at least 3 characters.' },
+                ]}
+              >
+                <Input
+                  prefix={<BankOutlined />}
+                  placeholder="GreenEarth Foundation"
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="description"
+                label="Organization Description"
+                rules={[
+                  { required: true, message: 'Description is required.' },
+                  { min: 20, message: 'Must be at least 20 characters.' },
+                ]}
+              >
+                <TextArea
+                  autoSize={{ minRows: 4, maxRows: 8 }}
+                  maxLength={600}
+                  showCount
+                />
+              </Form.Item>
+
+              <Row gutter={16}>
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    name="websiteUrl"
+                    label="Website URL"
+                    rules={[
+                      { required: true, message: 'Website URL is required.' },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          try {
+                            const url = new URL(value);
+                            if (!url.protocol.startsWith('http')) {
+                              return Promise.reject(
+                                'Enter a valid URL with http/https.'
+                              );
+                            }
+                            return Promise.resolve();
+                          } catch {
+                            return Promise.reject(
+                              'Enter a valid URL.'
+                            );
+                          }
+                        },
+                      },
+                    ]}
+                  >
+                    <Input
+                      prefix={<GlobalOutlined />}
+                      placeholder="https://example.org"
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <Form.Item
+                    name="location"
+                    label="Location"
+                    rules={[
+                      { required: true, message: 'Location is required.' },
+                    ]}
+                  >
+                    <Input
+                      prefix={<EnvironmentOutlined />}
+                      placeholder="City, Country"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Divider plain>Additional Info (Optional)</Divider>
+
+              <Form.Item
+                name="shortBio"
+                label="Short Tagline"
+                tooltip={{
+                  title:
+                    'A short sentence describing your NGO.',
+                  icon: <InfoCircleOutlined />,
+                }}
+              >
+                <Input
+                  prefix={<InfoCircleOutlined />}
+                  maxLength={120}
+                  showCount
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Space>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SaveOutlined />}
+                    loading={saving}
+                  >
+                    Save Profile
+                  </Button>
+
+                  <Button onClick={() => form.resetFields()}>
+                    Reset
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }

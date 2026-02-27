@@ -1,49 +1,134 @@
-import { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Layout, Menu, Button, Space, Avatar, Dropdown, Typography } from 'antd';
+import {
+    UserOutlined,
+    LogoutOutlined,
+    AppstoreOutlined,
+    InfoCircleOutlined,
+    BankOutlined,
+    SettingOutlined,
+    LoginOutlined,
+    RocketOutlined,
+} from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
+import './Navbar.css';
+
+const { Header } = Layout;
+const { Text } = Typography;
 
 const Navbar = () => {
-    const { user, logout } = useContext(AuthContext);
+    const { user, logout, loading } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
+    // Nav items for all users
+    const navItems = [
+        { key: '/opportunities', label: <Link to="/opportunities">Opportunities</Link>, icon: <AppstoreOutlined /> },
+        { key: '/organizations', label: <Link to="/organizations">For NGOs</Link>, icon: <BankOutlined /> },
+        { key: '/about', label: <Link to="/about">About Us</Link>, icon: <InfoCircleOutlined /> },
+    ];
+
+    // Dropdown menu for logged-in user avatar
+    const userDropdownItems = [
+        {
+            key: 'profile',
+            icon: <UserOutlined />,
+            label: user?.role === 'ngo' ? <Link to="/ngo-profile">NGO Profile</Link> : <Link to="/profile">My Profile</Link>,
+        },
+        ...(user?.role === 'ngo' ? [{
+            key: 'manage',
+            icon: <SettingOutlined />,
+            label: <Link to="/manage-opportunities">Manage Opportunities</Link>,
+        }] : []),
+        { type: 'divider' },
+        {
+            key: 'logout',
+            icon: <LogoutOutlined />,
+            label: 'Logout',
+            danger: true,
+            onClick: handleLogout,
+        },
+    ];
+
     return (
-        <nav className="navbar">
-            <div className="logo">
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 20h16v2H4v-2zm2-7h12v2H6v-2zm2-5h8v2H8V8zm3-6h2v4h-2V2z" fill="#6366f1" opacity="0.3" />
-                        <path d="M21 15c0-4.63-3.08-8.52-7.27-9.7l.95-3.32-1.9-.56L11 7.21 9.22 1.42 7.32 1.98l.95 3.32C4.08 6.48 1 10.37 1 15v4h2v-4c0-4.42 3.58-8 8-8s8 3.58 8 8v4h2v-4zM11 9c-3.31 0-6 2.69-6 6v2h12v-2c0-3.31-2.69-6-6-6z" fill="#6366f1" />
-                    </svg>
-                    SkillBridge
-                </Link>
-            </div>
-            <ul className="nav-links">
-                {user ? (
-                    <>
-                        <li><Link to="/profile">👤 Profile</Link></li>
-                        <li>
-                            <button onClick={handleLogout}>
-                                Logout
-                            </button>
-                        </li>
-                    </>
+        <Header className="app-navbar">
+            {/* Logo */}
+            <Link to="/" className="navbar-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#60a5fa" />
+                            <stop offset="100%" stopColor="#06b6d4" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M21 15c0-4.63-3.08-8.52-7.27-9.7l.95-3.32-1.9-.56L11 7.21 9.22 1.42 7.32 1.98l.95 3.32C4.08 6.48 1 10.37 1 15v4h2v-4c0-4.42 3.58-8 8-8s8 3.58 8 8v4h2v-4z" fill="url(#logoGrad)" />
+                </svg>
+                <span className="navbar-logo-text">SkillBridge</span>
+            </Link>
+
+            {/* Center nav links */}
+            <Menu
+                mode="horizontal"
+                selectedKeys={[location.pathname]}
+                items={navItems}
+                className="navbar-menu"
+                disabledOverflow
+            />
+
+            {/* Right side — hidden during loading to prevent flicker */}
+            <div className="navbar-right">
+                {loading ? null : user ? (
+                    <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight" arrow>
+                        <Space className="navbar-user" style={{ cursor: 'pointer' }}>
+                            <Avatar
+                                size={36}
+                                style={{
+                                    background: 'linear-gradient(135deg, #0f6fff, #06b6d4)',
+                                    fontSize: '0.95rem',
+                                    fontWeight: 700,
+                                    border: '2px solid rgba(255,255,255,0.2)',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {user.name?.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Text className="navbar-username" ellipsis>
+                                {user.name}
+                            </Text>
+                        </Space>
+                    </Dropdown>
                 ) : (
-                    <>
-                        <li><Link to="/opportunities">Opportunities</Link></li>
-                        <li><Link to="/organizations">For NGOs</Link></li>
-                        <li><Link to="/about">About Us</Link></li>
-                        <li><Link to="/login">Log In</Link></li>
-                        <li><Link to="/register" className="nav-btn-primary">Get Started</Link></li>
-                    </>
+                    <Space size={8}>
+                        <Link to="/login">
+                            <Button
+                                type="text"
+                                className="navbar-login-btn"
+                                icon={<LoginOutlined />}
+                            >
+                                Log In
+                            </Button>
+                        </Link>
+                        <Link to="/register">
+                            <Button
+                                type="primary"
+                                className="navbar-cta-btn"
+                                icon={<RocketOutlined />}
+                            >
+                                Get Started
+                            </Button>
+                        </Link>
+                    </Space>
                 )}
-            </ul>
-        </nav>
+            </div>
+        </Header>
     );
 };
 
 export default Navbar;
+
