@@ -1,0 +1,251 @@
+/* =====================================================
+   Opportunities Page – SkillBridge Professional Redesign
+   ===================================================== */
+
+.opportunities-layout {
+    background: #f8fafc !important;
+}
+
+/* ── Hero ── */
+.opp-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0a2a4a 100%);
+    padding: 90px 0 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.opp-hero::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(15, 111, 255, 0.15), transparent 70%);
+    top: -120px;
+    left: -130px;
+    pointer-events: none;
+}
+
+.opp-hero::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.12), transparent 70%);
+    bottom: -80px;
+    right: -80px;
+    pointer-events: none;
+}
+
+.opp-hero .container {
+    position: relative;
+    z-index: 1;
+}
+
+.opp-hero-title {
+    font-size: clamp(2rem, 4.5vw, 3.2rem) !important;
+    font-weight: 900 !important;
+    color: #fff !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 16px !important;
+}
+
+.opp-highlight {
+    background: linear-gradient(135deg, #60a5fa, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.opp-hero-subtitle {
+    font-size: 1.05rem !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    max-width: 520px;
+    margin: 0 auto 36px !important;
+    line-height: 1.7 !important;
+}
+
+.opp-cta-btn {
+    background: linear-gradient(135deg, #0f6fff, #06b6d4) !important;
+    border: none !important;
+    height: 50px !important;
+    padding: 0 32px !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 28px rgba(15, 111, 255, 0.4) !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+}
+
+.opp-cta-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 36px rgba(15, 111, 255, 0.5) !important;
+}
+
+/* ── Listing Section ── */
+.opp-list-section {
+    padding: 72px 0;
+    background: #f8fafc;
+}
+
+.opp-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.opp-list-header h3.ant-typography {
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    font-size: 1.5rem !important;
+}
+
+/* ── Opportunity Cards ── */
+.opportunity-card {
+    border-radius: 16px !important;
+    border: 1px solid #e8f0fe !important;
+    transition: box-shadow 0.28s, transform 0.28s !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+.opportunity-card:hover {
+    box-shadow: 0 16px 48px rgba(15, 111, 255, 0.15) !important;
+    transform: translateY(-5px) !important;
+}
+
+.opportunity-card .ant-card-body {
+    flex: 1;
+    padding: 22px 22px 10px !important;
+}
+
+.opportunity-card .ant-card-actions {
+    border-top: 1px solid #f1f5f9 !important;
+    background: #f8fafc !important;
+}
+
+.opportunity-card .ant-card-actions>li {
+    margin: 12px 16px !important;
+}
+
+.opp-card-header {
+    margin-bottom: 12px;
+}
+
+.type-tag {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    border-radius: 9999px !important;
+    padding: 2px 10px !important;
+}
+
+.opp-card-title {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    line-height: 1.4 !important;
+    margin-bottom: 6px !important;
+}
+
+.opp-org {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    display: block !important;
+    margin-bottom: 14px !important;
+}
+
+.opp-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.opp-meta .ant-space-item {
+    display: flex;
+    align-items: center;
+}
+
+.opp-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.opp-skills .ant-tag {
+    border-radius: 9999px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    padding: 2px 10px !important;
+}
+
+/* Apply button inside card */
+.opportunity-card .ant-btn-primary {
+    background: linear-gradient(135deg, #0f6fff, #06b6d4) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+}
+
+/* ── Signup CTA ── */
+.opp-signup-cta {
+    margin-top: 56px;
+    background: linear-gradient(135deg, #0f172a, #1e3a5f);
+    border-radius: 20px;
+    padding: 56px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.opp-signup-cta::before {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.15), transparent 70%);
+    top: -80px;
+    right: -60px;
+}
+
+.opp-cta-icon {
+    font-size: 2.5rem !important;
+    color: #06b6d4 !important;
+    display: block !important;
+    margin-bottom: 16px !important;
+}
+
+.opp-signup-cta h4.ant-typography {
+    color: #fff !important;
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 8px !important;
+}
+
+.opp-signup-cta .ant-typography-secondary {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.opp-signup-cta .ant-btn-primary {
+    background: linear-gradient(135deg, #0f6fff, #06b6d4) !important;
+    border: none !important;
+    height: 50px !important;
+    padding: 0 36px !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 28px rgba(15, 111, 255, 0.4) !important;
+}
