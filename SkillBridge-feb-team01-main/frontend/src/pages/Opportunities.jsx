@@ -52,12 +52,27 @@ const Opportunities = () => {
         fetchOpportunities();
     }, []);
 
-    const handleApply = (title) => {
-        notification.success({
-            message: 'Application Sent!',
-            description: `You have successfully applied for "${title}". The organization will review your profile shortly.`,
-            placement: 'topRight',
-        });
+    const handleApply = async (oppId, title) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_BASE}/applications`, {
+                opportunity_id: oppId,
+            }, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            notification.success({
+                message: 'Application Sent!',
+                description: `You have successfully applied for "${title}". The organization will review your profile shortly.`,
+                placement: 'topRight',
+            });
+        } catch (error) {
+            const msg = error.response?.data?.message || 'Failed to submit application.';
+            notification.error({
+                message: 'Application Failed',
+                description: msg,
+                placement: 'topRight',
+            });
+        }
     };
 
     return (
@@ -123,7 +138,7 @@ const Opportunities = () => {
                                                         type="primary"
                                                         block
                                                         key="apply"
-                                                        onClick={() => handleApply(opp.title)}
+                                                        onClick={() => handleApply(opp.id, opp.title)}
                                                         icon={<SuccessIcon />}
                                                     >
                                                         Apply Now

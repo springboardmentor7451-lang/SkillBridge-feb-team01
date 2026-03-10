@@ -39,17 +39,28 @@ const ManageOpportunities = () => {
             const res = await axios.get(`${API_BASE}/opportunities/my`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            // Map API fields to component fields
-            const mapped = res.data.map(opp => ({
-                id: opp._id,
-                title: opp.title,
-                description: opp.description,
-                skills: opp.skillsRequired || [],
-                location: opp.location,
-                duration: opp.duration || '',
-                status: opp.status === 'open' ? 'Open' : 'Closed',
-                createdAt: opp.createdAt ? opp.createdAt.split('T')[0] : '',
-                applicants: opp.applicants || [],
+            // Map API fields to component fields and fetch applicants for each
+            const mapped = await Promise.all(res.data.map(async (opp) => {
+                let applicants = [];
+                try {
+                    const appRes = await axios.get(`${API_BASE}/applications/opportunity/${opp._id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    applicants = appRes.data;
+                } catch (err) {
+                    console.error(`Error fetching applicants for ${opp._id}:`, err);
+                }
+                return {
+                    id: opp._id,
+                    title: opp.title,
+                    description: opp.description,
+                    skills: opp.skillsRequired || [],
+                    location: opp.location,
+                    duration: opp.duration || '',
+                    status: opp.status === 'open' ? 'Open' : 'Closed',
+                    createdAt: opp.createdAt ? opp.createdAt.split('T')[0] : '',
+                    applicants,
+                };
             }));
             setOpportunities(mapped);
         } catch (error) {
@@ -168,11 +179,25 @@ const ManageOpportunities = () => {
         setIsApplicantModalVisible(true);
     };
 
-    const handleApplicantAction = (action, applicant) => {
-        notification.success({
-            message: `Applicant ${action}ed`,
-            description: `You have ${action.toLowerCase()}ed ${applicant.name}.`,
-        });
+    const handleApplicantAction = async (action, applicant) => {
+        try {
+            const status = action.toLowerCase() === 'accept' ? 'accepted' : 'rejected';
+            await axios.put(`${API_BASE}/applications/${applicant._id}/status`, {
+                status,
+            }, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            notification.success({
+                message: `Applicant ${action}ed`,
+                description: `You have ${action.toLowerCase()}ed ${applicant.name}.`,
+            });
+            fetchOpportunities(); // Refresh to show updated status
+        } catch (error) {
+            notification.error({
+                message: 'Error',
+                description: error.response?.data?.message || `Failed to ${action.toLowerCase()} applicant.`,
+            });
+        }
     };
 
     // ── Table columns ──
