@@ -151,7 +151,7 @@ const ManageOpportunities = () => {
             title: isClosed ? 'Delete Opportunity?' : 'Close Opportunity?',
             content: isClosed
                 ? 'This action is permanent. The opportunity will be removed.'
-                : 'This will stop new applicants from applying.',
+                : 'This will mark the opportunity as closed.',
             okText: isClosed ? 'Delete' : 'Close It',
             okType: 'danger',
             cancelText: 'Cancel',
@@ -161,7 +161,7 @@ const ManageOpportunities = () => {
                     notification.success({ message: 'Deleted', description: 'The opportunity was removed.' });
                 } else {
                     setOpportunities(prev => prev.map(o => o.id === record.id ? { ...o, status: 'Closed' } : o));
-                    notification.info({ message: 'Closed', description: 'The opportunity is now closed to new applicants.' });
+                    notification.info({ message: 'Closed', description: 'The opportunity is now marked as closed.' });
                 }
             },
         });
