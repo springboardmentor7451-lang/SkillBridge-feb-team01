@@ -1,0 +1,159 @@
+/* =====================================================
+   Navbar – SkillBridge Professional Redesign
+   ===================================================== */
+
+.app-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: 64px;
+    line-height: 64px;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(15, 23, 42, 0.92) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Logo ── */
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+    margin-right: 32px;
+}
+
+.navbar-logo-text {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #60a5fa, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Nav Menu ── */
+.navbar-menu {
+    flex: 1;
+    background: transparent !important;
+    border-bottom: none !important;
+    line-height: 62px;
+    gap: 4px;
+}
+
+.navbar-menu .ant-menu-item {
+    color: rgba(255, 255, 255, 0.72) !important;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 8px !important;
+    margin: 0 2px !important;
+    padding: 0 14px !important;
+    transition: background 0.2s, color 0.2s !important;
+}
+
+.navbar-menu .ant-menu-item:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.navbar-menu .ant-menu-item-selected {
+    color: #60a5fa !important;
+    background: rgba(96, 165, 250, 0.12) !important;
+}
+
+.navbar-menu .ant-menu-item::after {
+    display: none !important;
+}
+
+/* ── Right Side ── */
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+/* Login button */
+.navbar-login-btn {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    border-radius: 8px !important;
+    padding: 0 14px !important;
+    height: 38px !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    transition: color 0.2s, background 0.2s, border-color 0.2s !important;
+}
+
+.navbar-login-btn:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+/* CTA pill button */
+.navbar-cta-btn {
+    background: linear-gradient(135deg, #0f6fff, #06b6d4) !important;
+    border: none !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em !important;
+    border-radius: 9999px !important;
+    padding: 0 20px !important;
+    height: 38px !important;
+    font-size: 0.88rem !important;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s !important;
+    box-shadow: 0 4px 20px rgba(15, 111, 255, 0.45) !important;
+}
+
+.navbar-cta-btn:hover {
+    opacity: 0.92 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 28px rgba(15, 111, 255, 0.6) !important;
+}
+
+/* ── User section ── */
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.2s;
+}
+
+.navbar-user:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-username {
+    max-width: 120px;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+}
+
+/* ── Dropdown menu ── */
+.ant-dropdown .ant-dropdown-menu {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 6px !important;
+    min-width: 185px !important;
+}
+
+.ant-dropdown .ant-dropdown-menu-item {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    padding: 9px 12px !important;
+}

@@ -1,0 +1,330 @@
+/* =====================================================
+   SkillBridge – Global Design System
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── CSS Variables ── */
+:root {
+  --primary: #0f6fff;
+  --primary-dark: #0a54cc;
+  --primary-light: #3d8bff;
+  --accent: #06b6d4;
+  --accent2: #8b5cf6;
+
+  --bg-dark: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-muted: #334155;
+
+  --text-base: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #f8fafc;
+  --text-faint: rgba(255, 255, 255, 0.7);
+
+  --border: #e2e8f0;
+  --border-dark: #334155;
+
+  --gradient-primary: linear-gradient(135deg, #0f6fff 0%, #06b6d4 100%);
+  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2a4a 100%);
+  --gradient-card: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #0f6fff 100%);
+
+  --shadow-sm: 0 1px 6px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 24px rgba(15, 111, 255, 0.1);
+  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.15);
+  --shadow-primary: 0 8px 32px rgba(15, 111, 255, 0.3);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --navbar-h: 64px;
+  --max-w: 1200px;
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-base);
+  background: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Layout Container ── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Global Section Spacing ── */
+.section {
+  padding: 80px 0;
+}
+
+.section-sm {
+  padding: 48px 0;
+}
+
+/* ── Hero Gradient Base ── */
+.hero-gradient {
+  background: var(--gradient-hero);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Floating orb decoration */
+.hero-gradient::before,
+.hero-gradient::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.hero-gradient::before {
+  width: 500px;
+  height: 500px;
+  background: var(--primary);
+  top: -100px;
+  left: -150px;
+}
+
+.hero-gradient::after {
+  width: 400px;
+  height: 400px;
+  background: var(--accent);
+  bottom: -80px;
+  right: -100px;
+}
+
+/* ── Card Styles ── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+
+.glass-card:hover {
+  box-shadow: var(--shadow-primary);
+  transform: translateY(-3px);
+}
+
+/* ── Gradient Text ── */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Pill Badge ── */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.pill-badge-primary {
+  background: rgba(15, 111, 255, 0.12);
+  color: var(--primary);
+  border: 1px solid rgba(15, 111, 255, 0.25);
+}
+
+/* ── Icon Circle ── */
+.icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.icon-circle-primary {
+  background: linear-gradient(135deg, rgba(15, 111, 255, 0.12), rgba(6, 182, 212, 0.12));
+  color: var(--primary);
+}
+
+/* ── Gradient Button ── */
+.btn-gradient {
+  background: var(--gradient-primary) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  transition: opacity 0.2s, transform 0.15s !important;
+}
+
+.btn-gradient:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ── Section Title ── */
+.section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-base);
+  line-height: 1.25;
+}
+
+.section-subtitle {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* ── Ant Design Overrides ── */
+.ant-layout {
+  background: transparent !important;
+}
+
+/* Table */
+.ant-table-thead>tr>th {
+  text-transform: uppercase;
+  font-size: 11px !important;
+  letter-spacing: 0.07em;
+  font-weight: 700 !important;
+}
+
+.ant-table-row:hover>td {
+  background: #f0f6ff !important;
+}
+
+/* Divider text */
+.ant-divider-inner-text {
+  font-size: 11px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+/* Tags */
+.ant-tag {
+  font-size: 12px;
+}
+
+/* Spin */
+.ant-spin-container {
+  width: 100%;
+}
+
+/* Form label */
+.ant-form-item-label>label {
+  font-weight: 600 !important;
+  color: var(--text-base) !important;
+  font-size: 13px !important;
+}
+
+/* Descriptions */
+.ant-descriptions-item-label {
+  color: var(--text-muted) !important;
+  font-size: 13px !important;
+}
+
+.ant-descriptions-item-content {
+  font-weight: 500 !important;
+}
+
+/* Badge */
+.ant-badge-count {
+  font-size: 10px !important;
+  min-width: 16px !important;
+  height: 16px !important;
+  line-height: 16px !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 111, 255, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(15, 111, 255, 0);
+  }
+}
+
+.anim-fade-up {
+  animation: fadeInUp 0.6s ease both;
+}
+
+.anim-float {
+  animation: float 4s ease-in-out infinite;
+}
