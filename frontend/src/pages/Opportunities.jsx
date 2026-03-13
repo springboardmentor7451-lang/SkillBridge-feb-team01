@@ -1,13 +1,13 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Empty, notification } from 'antd';
+import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Empty, Modal, Descriptions, Divider } from 'antd';
 import {
     SearchOutlined,
     EnvironmentOutlined,
     ClockCircleOutlined,
     TeamOutlined,
     FilterOutlined,
-    CheckCircleOutlined as SuccessIcon
+    EyeOutlined
 } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
 import './Opportunities.css';
@@ -81,13 +81,17 @@ const typeColors = {
 
 const Opportunities = () => {
     const { user } = useContext(AuthContext);
+    const [selectedOpp, setSelectedOpp] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
 
-    const handleApply = (title) => {
-        notification.success({
-            message: 'Application Sent!',
-            description: `You have successfully applied for "${title}". The organization will review your profile shortly.`,
-            placement: 'topRight',
-        });
+    const handleViewDetails = (opp) => {
+        setSelectedOpp(opp);
+        setIsModalVisible(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalVisible(false);
+        setSelectedOpp(null);
     };
 
     return (
@@ -109,7 +113,7 @@ const Opportunities = () => {
                                     </Paragraph>
                                     <Link to="/register">
                                         <Button type="primary" size="large" icon={<SearchOutlined />} className="opp-cta-btn">
-                                            Browse & Apply
+                                            Explore Opportunities
                                         </Button>
                                     </Link>
                                 </Col>
@@ -135,21 +139,15 @@ const Opportunities = () => {
                                         hoverable
                                         className="opportunity-card"
                                         actions={[
-                                            user ? (
-                                                <Button
-                                                    type="primary"
-                                                    block
-                                                    key="apply"
-                                                    onClick={() => handleApply(opp.title)}
-                                                    icon={<SuccessIcon />}
-                                                >
-                                                    Apply Now
-                                                </Button>
-                                            ) : (
-                                                <Link to="/register" key="apply" style={{ width: '100%' }}>
-                                                    <Button type="primary" block>Apply Now</Button>
-                                                </Link>
-                                            )
+                                            <Button
+                                                type="primary"
+                                                block
+                                                key="view"
+                                                onClick={() => handleViewDetails(opp)}
+                                                icon={<EyeOutlined />}
+                                            >
+                                                View Details
+                                            </Button>
                                         ]}
                                     >
                                         <div className="opp-card-header">
@@ -177,19 +175,56 @@ const Opportunities = () => {
                             ))}
                         </Row>
 
-                        {/* Signup CTA - Only show for guests */}
-                        {!user && (
-                            <div className="opp-signup-cta">
-                                <TeamOutlined className="opp-cta-icon" />
-                                <Title level={4}>See All Opportunities</Title>
-                                <Paragraph type="secondary" style={{ marginBottom: 24 }}>
-                                    Sign up or log in to view all available opportunities and apply directly.
-                                </Paragraph>
-                                <Link to="/register">
-                                    <Button type="primary" size="large">Create Free Account</Button>
-                                </Link>
-                            </div>
-                        )}
+                        {/* Detail Modal */}
+                        <Modal
+                            title={<Title level={3} style={{ margin: 0 }}>{selectedOpp?.title}</Title>}
+                            open={isModalVisible}
+                            onCancel={handleCloseModal}
+                            footer={[
+                                <Button key="close" onClick={handleCloseModal}>
+                                    Close
+                                </Button>
+                            ]}
+                            width={700}
+                            centered
+                            className="opp-detail-modal"
+                        >
+                            {selectedOpp && (
+                                <div className="modal-content">
+                                    <div style={{ marginBottom: 20 }}>
+                                        <Tag color={typeColors[selectedOpp.type] || 'default'} style={{ fontSize: '0.9rem', padding: '4px 12px', borderRadius: 20 }}>
+                                            {selectedOpp.type}
+                                        </Tag>
+                                        <span style={{ marginLeft: 12, fontSize: '1rem', color: 'rgba(0, 0, 0, 0.45)' }}>{selectedOpp.org}</span>
+                                    </div>
+
+                                    <Descriptions column={1} bordered className="opp-descriptions">
+                                        <Descriptions.Item label="Location">
+                                            <Space><EnvironmentOutlined />{selectedOpp.location}</Space>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Duration">
+                                            <Space><ClockCircleOutlined />{selectedOpp.duration}</Space>
+                                        </Descriptions.Item>
+                                    </Descriptions>
+
+                                    <Divider orientation="left">Skills Required</Divider>
+                                    <div style={{ marginBottom: 24 }}>
+                                        {selectedOpp.skills.map(skill => (
+                                            <Tag key={skill} color="geekblue" style={{ marginBottom: 8, padding: '4px 12px', borderRadius: 6 }}>
+                                                {skill}
+                                            </Tag>
+                                        ))}
+                                    </div>
+
+                                    <Divider orientation="left">About the Role</Divider>
+                                    <Paragraph style={{ fontSize: '1.05rem', lineHeight: '1.6', color: '#475569' }}>
+                                        Join {selectedOpp.org} as a {selectedOpp.title}. This role offers a unique opportunity to use your skills for meaningful social impact. 
+                                        As a volunteer, you will contribute your expertise in {selectedOpp.skills.join(', ')} to support our mission in {selectedOpp.location}.
+                                        We are looking for passionate individuals who can commit to {selectedOpp.duration} and help us drive positive change.
+                                    </Paragraph>
+                                </div>
+                            )}
+                        </Modal>
                     </div>
                 </div>
             </Content>
