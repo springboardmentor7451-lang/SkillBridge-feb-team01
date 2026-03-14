@@ -1,9 +1,7 @@
 import Opportunity from "../models/Opportunity.js";
 import Application from "../models/Application.js";
 
-// @desc    Create a new opportunity
-// @route   POST /api/opportunities
-// @access  Private (NGO only)
+// CREATE OPPORTUNITY
 export const createOpportunity = async (req, res, next) => {
     try {
         const { title, description, skillsRequired, location, duration } = req.body;
@@ -27,9 +25,7 @@ export const createOpportunity = async (req, res, next) => {
     }
 };
 
-// @desc    Get opportunities created by logged-in NGO
-// @route   GET /api/opportunities/my
-// @access  Private (NGO only)
+// GET MY OPPORTUNITIES
 export const getMyOpportunities = async (req, res, next) => {
     try {
         const opportunities = await Opportunity.find({
@@ -60,9 +56,7 @@ export const getMyOpportunities = async (req, res, next) => {
     }
 };
 
-// @desc    Update an opportunity
-// @route   PUT /api/opportunities/:id
-// @access  Private (NGO only, owner)
+// UPDATE OPPORTUNITY
 export const updateOpportunity = async (req, res, next) => {
     try {
         const opportunity = await Opportunity.findById(req.params.id);
@@ -71,11 +65,10 @@ export const updateOpportunity = async (req, res, next) => {
             return res.status(404).json({ message: "Opportunity not found" });
         }
 
-        // Ensure the logged-in NGO owns this opportunity
         if (opportunity.createdBy.toString() !== req.user._id.toString()) {
-            return res
-                .status(403)
-                .json({ message: "Not authorized to update this opportunity" });
+            return res.status(403).json({
+                message: "Not authorized to update this opportunity",
+            });
         }
 
         const updatedOpportunity = await Opportunity.findByIdAndUpdate(
@@ -93,9 +86,7 @@ export const updateOpportunity = async (req, res, next) => {
     }
 };
 
-// @desc    Delete an opportunity
-// @route   DELETE /api/opportunities/:id
-// @access  Private (NGO only, owner)
+// DELETE OPPORTUNITY
 export const deleteOpportunity = async (req, res, next) => {
     try {
         const opportunity = await Opportunity.findById(req.params.id);
@@ -104,16 +95,34 @@ export const deleteOpportunity = async (req, res, next) => {
             return res.status(404).json({ message: "Opportunity not found" });
         }
 
-        // Ensure the logged-in NGO owns this opportunity
         if (opportunity.createdBy.toString() !== req.user._id.toString()) {
-            return res
-                .status(403)
-                .json({ message: "Not authorized to delete this opportunity" });
+            return res.status(403).json({
+                message: "Not authorized to delete this opportunity",
+            });
         }
 
         await Opportunity.findByIdAndDelete(req.params.id);
 
-        res.status(200).json({ message: "Opportunity deleted successfully" });
+        res.status(200).json({
+            message: "Opportunity deleted successfully",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getOpportunityDetails = async (req, res, next) => {
+    try {
+        const opportunity = await Opportunity.findById(req.params.id)
+            .populate("createdBy", "name email");
+
+        if (!opportunity) {
+            return res.status(404).json({
+                message: "Opportunity not found",
+            });
+        }
+
+        res.status(200).json(opportunity);
     } catch (error) {
         next(error);
     }

@@ -2,32 +2,26 @@ import Application from "../models/Application.js";
 import Opportunity from "../models/Opportunity.js";
 import Notification from "../models/Notification.js";
 
-// @desc    Apply to an opportunity
-// @route   POST /api/applications
-// @access  Private (Volunteer only)
+// APPLY TO OPPORTUNITY
 export const applyToOpportunity = async (req, res, next) => {
   try {
     const { opportunity_id } = req.body;
 
-    // Validate required field
     if (!opportunity_id) {
       return res.status(400).json({ message: "opportunity_id is required" });
     }
 
-    // Check if the opportunity exists
     const opportunity = await Opportunity.findById(opportunity_id);
     if (!opportunity) {
       return res.status(404).json({ message: "Opportunity not found" });
     }
 
-    // Check if the opportunity is still open
     if (opportunity.status !== "open") {
       return res
         .status(400)
         .json({ message: "This opportunity is no longer accepting applications" });
     }
 
-    // Check for duplicate application
     const existingApplication = await Application.findOne({
       opportunity_id,
       volunteer_id: req.user._id,
@@ -39,7 +33,6 @@ export const applyToOpportunity = async (req, res, next) => {
         .json({ message: "You have already applied to this opportunity" });
     }
 
-    // Create the application
     const application = await Application.create({
       opportunity_id,
       volunteer_id: req.user._id,
@@ -62,9 +55,7 @@ export const applyToOpportunity = async (req, res, next) => {
   }
 };
 
-// @desc    Get applications submitted by the logged-in volunteer
-// @route   GET /api/applications/my
-// @access  Private (Volunteer only)
+// GET MY APPLICATIONS (Volunteer)
 export const getMyApplications = async (req, res, next) => {
   try {
     const applications = await Application.find({
@@ -86,21 +77,17 @@ export const getMyApplications = async (req, res, next) => {
   }
 };
 
-// @desc    Update application status (accept/reject)
-// @route   PUT /api/applications/:id/status
-// @access  Private (NGO only)
+// UPDATE APPLICATION STATUS (Accept/Reject)
 export const updateApplicationStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
 
-    // Validate status value
     if (!status || !["accepted", "rejected"].includes(status)) {
       return res
         .status(400)
         .json({ message: "Status must be either 'accepted' or 'rejected'" });
     }
 
-    // Find the application and populate opportunity details
     const application = await Application.findById(req.params.id).populate(
       "opportunity_id"
     );
@@ -109,7 +96,6 @@ export const updateApplicationStatus = async (req, res, next) => {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    // Verify that the logged-in NGO owns the opportunity
     if (
       application.opportunity_id.createdBy.toString() !==
       req.user._id.toString()
@@ -119,7 +105,6 @@ export const updateApplicationStatus = async (req, res, next) => {
       });
     }
 
-    // Update the application status
     application.status = status;
     await application.save();
 
@@ -137,4 +122,25 @@ export const updateApplicationStatus = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+// GET NGO APPLICATIONS
+export const getNGOApplications = async (req, res, next) => {
+    try {
+        const opportunities = await Opportunity.find({
+            createdBy: req.user._id,
+        });
+
+        const opportunityIds = opportunities.map(op => op._id);
+
+        const applications = await Application.find({
+            opportunity: { $in: opportunityIds },
+        })
+        .populate("volunteer", "name email")
+        .populate("opportunity", "title");
+
+        res.status(200).json(applications);
+    } catch (error) {
+        next(error);
+    }
 };
