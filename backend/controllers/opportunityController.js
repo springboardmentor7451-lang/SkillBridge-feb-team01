@@ -1,4 +1,5 @@
 import Opportunity from "../models/Opportunity.js";
+import Application from "../models/Application.js";
 
 // @desc    Create a new opportunity
 // @route   POST /api/opportunities
@@ -33,9 +34,27 @@ export const getMyOpportunities = async (req, res, next) => {
     try {
         const opportunities = await Opportunity.find({
             createdBy: req.user._id,
-        }).sort({ createdAt: -1 });
+        }).lean().sort({ createdAt: -1 });
 
-        res.status(200).json(opportunities);
+        const oppsWithApplicants = await Promise.all(
+            opportunities.map(async (opp) => {
+                const applications = await Application.find({ opportunity_id: opp._id })
+                    .populate("volunteer_id", "name skills bio");
+                
+                const mappedApplicants = applications.map(app => ({
+                    application_id: app._id,
+                    volunteer_id: app.volunteer_id._id,
+                    name: app.volunteer_id.name,
+                    bio: app.volunteer_id.bio,
+                    skills: app.volunteer_id.skills || [],
+                    status: app.status
+                }));
+
+                return { ...opp, applicants: mappedApplicants };
+            })
+        );
+
+        res.status(200).json(oppsWithApplicants);
     } catch (error) {
         next(error);
     }
