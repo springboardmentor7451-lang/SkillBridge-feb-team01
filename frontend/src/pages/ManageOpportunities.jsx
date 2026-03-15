@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     Table, Tag, Badge, Button, Modal, Form, Input, Select,
     notification, Tooltip, List, Avatar, Space, Spin, Empty,
@@ -7,85 +7,20 @@ import {
 import {
     EditOutlined, DeleteOutlined, TeamOutlined,
     CheckCircleOutlined, CloseCircleOutlined, PlusOutlined,
-    EnvironmentOutlined, ClockCircleOutlined, EyeOutlined,
-    AppstoreOutlined, CalendarOutlined, FilterOutlined,
+    EnvironmentOutlined, ClockCircleOutlined,
+    AppstoreOutlined, FilterOutlined,
 } from '@ant-design/icons';
+import axios from 'axios';
+import AuthContext from '../context/AuthContext';
+import { API_URL } from '../services/api';
 import './ManageOpportunities.css';
 
 const { Option } = Select;
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
 
-const initialOpportunities = [
-    {
-        id: '1',
-        title: 'English Teacher for Underprivileged Kids',
-        description: 'We are looking for patient and experienced English teachers to help underprivileged children improve their language skills in after-school programs.',
-        skills: ['Teaching', 'English', 'Patience'],
-        location: 'Mumbai, India',
-        duration: '3 Months',
-        status: 'Open',
-        createdAt: '2024-10-15',
-        applicants: [],
-    },
-    {
-        id: '2',
-        title: 'Website Redesign Volunteer',
-        description: 'Help us redesign and rebuild our NGO website to better communicate our mission, improve user experience, and attract more donors and volunteers.',
-        skills: ['Web Design', 'UI/UX', 'React'],
-        location: 'Remote',
-        duration: '1 Month',
-        status: 'Closed',
-        createdAt: '2024-09-01',
-        applicants: [],
-    },
-    {
-        id: '3',
-        title: 'Community Health Camp Volunteer',
-        description: 'Join our community health camp team to provide basic medical assistance, health screenings, and first aid support to rural communities in need.',
-        skills: ['Healthcare', 'First Aid', 'Coordination'],
-        location: 'Nairobi, Kenya',
-        duration: '2 Weeks',
-        status: 'Open',
-        createdAt: '2024-10-20',
-        applicants: [],
-    },
-    {
-        id: '4',
-        title: 'Social Media Manager',
-        description: 'Help us grow our online presence by creating compelling content, managing social media accounts, and engaging with our community of supporters and donors.',
-        skills: ['Marketing', 'Social Media', 'Content Creation'],
-        location: 'Remote',
-        duration: '2 Months',
-        status: 'Open',
-        createdAt: '2024-11-01',
-        applicants: [],
-    },
-    {
-        id: '5',
-        title: 'Legal Aid Consultant',
-        description: 'Provide pro-bono legal advice and consultation to our beneficiaries who cannot afford legal representation. Research and draft legal documents as needed.',
-        skills: ['Law', 'Research', 'Pro-bono'],
-        location: 'New York, USA',
-        duration: '6 Months',
-        status: 'Open',
-        createdAt: '2024-11-05',
-        applicants: [],
-    },
-    {
-        id: '6',
-        title: 'Data Analyst for Impact Reporting',
-        description: 'Analyze program data, build dashboards, and create impact reports to help our NGO demonstrate measurable outcomes to donors and stakeholders.',
-        skills: ['Data Analysis', 'Excel', 'Python'],
-        location: 'Remote',
-        duration: '3 Months',
-        status: 'Open',
-        createdAt: '2024-11-10',
-        applicants: [],
-    },
-];
-
 const ManageOpportunities = () => {
+    const { token } = useContext(AuthContext);
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All');
@@ -98,11 +33,33 @@ const ManageOpportunities = () => {
     const [editForm] = Form.useForm();
 
     useEffect(() => {
-        setTimeout(() => {
-            setOpportunities(initialOpportunities);
+        if (token) {
+            fetchMyOpportunities();
+        }
+    }, [token]);
+
+    const fetchMyOpportunities = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${API_URL}/opportunities/my`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // Map _id to id, skillsRequired to skills, and capitalize status for the frontend
+            const mappedOpportunities = response.data.map(opp => ({
+                ...opp,
+                id: opp._id,
+                skills: opp.skillsRequired || [],
+                status: opp.status === 'open' ? 'Open' : 'Closed',
+                applicants: opp.applicants || []
+            }));
+            setOpportunities(mappedOpportunities);
+        } catch (error) {
+            console.error('Error fetching NGO opportunities:', error);
+            notification.error({ message: 'Error', description: 'Failed to load opportunities' });
+        } finally {
             setLoading(false);
-        }, 800);
-    }, []);
+        }
+    };
 
     const filteredOpportunities = opportunities.filter(opp => {
         if (filter === 'All') return true;
@@ -115,33 +72,61 @@ const ManageOpportunities = () => {
     const totalApplicants = opportunities.reduce((sum, o) => sum + o.applicants.length, 0);
 
     // ── Create ──
-    const handleCreateSubmit = (values) => {
-        setIsCreateModalVisible(false);
-        const newOpp = {
-            id: String(Date.now()),
-            ...values,
-            skills: values.skills || [],
-            applicants: [],
-            createdAt: new Date().toISOString().split('T')[0],
-        };
-        setOpportunities(prev => [newOpp, ...prev]);
-        createForm.resetFields();
-        notification.success({ message: 'Opportunity Created', description: `"${values.title}" is now live.` });
+    const handleCreateSubmit = async (values) => {
+        try {
+            const payload = {
+                title: values.title,
+                description: values.description,
+                location: values.location,
+                duration: values.duration,
+                skillsRequired: values.skills, // Backend expects skillsRequired
+            };
+
+            const response = await axios.post(`${API_URL}/opportunities`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setIsCreateModalVisible(false);
+            createForm.resetFields();
+            notification.success({ message: 'Opportunity Created', description: `"${values.title}" is now live.` });
+            
+            // Refetch to get the latest data including MongoDB ID
+            fetchMyOpportunities();
+        } catch (error) {
+            console.error('Error creating opportunity:', error);
+            notification.error({ message: 'Error', description: error.response?.data?.message || 'Failed to create opportunity' });
+        }
     };
 
     // ── Edit ──
     const showEditModal = (record) => {
         setCurrentOpportunity(record);
-        editForm.setFieldsValue({ ...record });
+        editForm.setFieldsValue({ ...record, status: record.status.toLowerCase() }); // Backend expects lowercase
         setIsEditModalVisible(true);
     };
 
-    const handleEditSubmit = (values) => {
-        setIsEditModalVisible(false);
-        setOpportunities(prev => prev.map(o =>
-            o.id === currentOpportunity.id ? { ...o, ...values } : o
-        ));
-        notification.success({ message: 'Opportunity Updated', description: 'Changes saved successfully.' });
+    const handleEditSubmit = async (values) => {
+        try {
+            const payload = {
+                title: values.title,
+                description: values.description,
+                location: values.location,
+                duration: values.duration,
+                skillsRequired: values.skills,
+                status: values.status,
+            };
+
+            await axios.put(`${API_URL}/opportunities/${currentOpportunity.id}`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setIsEditModalVisible(false);
+            notification.success({ message: 'Opportunity Updated', description: 'Changes saved successfully.' });
+            fetchMyOpportunities();
+        } catch (error) {
+            console.error('Error updating opportunity:', error);
+            notification.error({ message: 'Error', description: error.response?.data?.message || 'Failed to update opportunity' });
+        }
     };
 
     // ── Delete/Close ──
@@ -151,17 +136,27 @@ const ManageOpportunities = () => {
             title: isClosed ? 'Delete Opportunity?' : 'Close Opportunity?',
             content: isClosed
                 ? 'This action is permanent. The opportunity will be removed.'
-                : 'This will stop new applicants from applying.',
+                : 'This will mark the opportunity as closed.',
             okText: isClosed ? 'Delete' : 'Close It',
             okType: 'danger',
             cancelText: 'Cancel',
-            onOk: () => {
-                if (isClosed) {
-                    setOpportunities(prev => prev.filter(o => o.id !== record.id));
-                    notification.success({ message: 'Deleted', description: 'The opportunity was removed.' });
-                } else {
-                    setOpportunities(prev => prev.map(o => o.id === record.id ? { ...o, status: 'Closed' } : o));
-                    notification.info({ message: 'Closed', description: 'The opportunity is now closed to new applicants.' });
+            onOk: async () => {
+                try {
+                    if (isClosed) {
+                        await axios.delete(`${API_URL}/opportunities/${record.id}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        notification.success({ message: 'Deleted', description: 'The opportunity was removed.' });
+                    } else {
+                        await axios.put(`${API_URL}/opportunities/${record.id}`, { status: 'closed' }, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        notification.info({ message: 'Closed', description: 'The opportunity is now marked as closed.' });
+                    }
+                    fetchMyOpportunities();
+                } catch (error) {
+                    console.error('Action error:', error);
+                    notification.error({ message: 'Error', description: 'Failed to complete action' });
                 }
             },
         });
@@ -173,11 +168,33 @@ const ManageOpportunities = () => {
         setIsApplicantModalVisible(true);
     };
 
-    const handleApplicantAction = (action, applicant) => {
-        notification.success({
-            message: `Applicant ${action}ed`,
-            description: `You have ${action.toLowerCase()}ed ${applicant.name}.`,
-        });
+    const handleApplicantAction = async (action, applicant) => {
+        try {
+            const status = action === 'Accept' ? 'accepted' : 'rejected';
+            
+            await axios.put(`${API_URL}/applications/${applicant.application_id}/status`, { status }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            notification.success({
+                message: `Applicant ${action}ed`,
+                description: `You have ${action.toLowerCase()}ed ${applicant.name}.`,
+            });
+
+            // Update local state to reflect the change inside the modal without closing it
+            setCurrentOpportunity(prev => ({
+                ...prev,
+                applicants: prev.applicants.map(app => 
+                    app.application_id === applicant.application_id ? { ...app, status } : app
+                )
+            }));
+            
+            // Also refresh the main list
+            fetchMyOpportunities();
+        } catch (error) {
+            console.error('Action error:', error);
+            notification.error({ message: 'Error', description: error.response?.data?.message || 'Failed to process application' });
+        }
     };
 
     // ── Table columns ──
@@ -295,7 +312,7 @@ const ManageOpportunities = () => {
         },
     ];
 
-    const SharedFormFields = ({ form: _form }) => (
+    const SharedFormFields = () => (
         <>
             <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Please enter a title' }]}>
                 <Input placeholder="e.g. English Teacher for Underprivileged Kids" />
@@ -318,12 +335,14 @@ const ManageOpportunities = () => {
             <Form.Item name="skills" label="Required Skills" rules={[{ required: true, message: 'Add at least one skill' }]}>
                 <Select mode="tags" placeholder="Type and press Enter to add skills" />
             </Form.Item>
-            <Form.Item name="status" label="Status" initialValue="Open">
-                <Select>
-                    <Option value="Open">Open</Option>
-                    <Option value="Closed">Closed</Option>
-                </Select>
-            </Form.Item>
+            {isEditModalVisible && (
+                <Form.Item name="status" label="Status" initialValue="open">
+                    <Select>
+                        <Option value="open">Open</Option>
+                        <Option value="closed">Closed</Option>
+                    </Select>
+                </Form.Item>
+            )}
         </>
     );
 
@@ -519,14 +538,14 @@ const ManageOpportunities = () => {
                                         <Avatar
                                             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', fontWeight: 700 }}
                                         >
-                                            {item.name.charAt(0)}
+                                            {item.name ? item.name.charAt(0) : '?'}
                                         </Avatar>
                                     }
                                     title={<Text strong>{item.name}</Text>}
                                     description={
                                         <div>
                                             <Paragraph style={{ marginBottom: 6, fontSize: '0.82rem', color: '#64748b' }}>
-                                                {item.bio}
+                                                {item.bio || 'No bio provided'}
                                             </Paragraph>
                                             <Space size={4} wrap>
                                                 {item.skills.map(skill => (
