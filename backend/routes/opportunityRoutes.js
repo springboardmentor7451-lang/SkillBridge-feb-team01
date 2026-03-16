@@ -11,12 +11,39 @@ import Opportunity from "../models/Opportunity.js";
 
 const router = express.Router();
 
+// Helper to safely build a case-insensitive RegExp from user input
+const escapeRegex = (value) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 // @route   GET /api/opportunities
-// @desc    Get all open opportunities (public)
+// @desc    Get all open opportunities (public) with optional filters
 // @access  Public
 router.get("/", async (req, res, next) => {
   try {
-    const opportunities = await Opportunity.find()
+    const { skill, location, search } = req.query;
+
+    const filter = {};
+
+    if (skill) {
+      // Exact match for skill in skillsRequired array
+      filter.skillsRequired = { $in: [skill] };
+    }
+
+    if (location) {
+      const regex = new RegExp(escapeRegex(location), "i");
+      filter.location = { $regex: regex };
+    }
+
+    if (search) {
+      const regex = new RegExp(escapeRegex(search), "i");
+      filter.$or = [
+        { title: regex },
+        { description: regex },
+      ];
+    }
+
+    const opportunities = await Opportunity.find(filter)
       .populate("createdBy", "organization_name")
       .sort({ createdAt: -1 });
     res.status(200).json(opportunities);
@@ -24,6 +51,8 @@ router.get("/", async (req, res, next) => {
     next(error);
   }
 });
+
+
 
 // @route   GET /api/opportunities/my
 // @desc    Get opportunities created by logged-in NGO
