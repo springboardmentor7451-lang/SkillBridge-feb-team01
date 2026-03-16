@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import {
     Table, Tag, Badge, Button, Modal, Form, Input, Select,
     notification, Tooltip, List, Avatar, Space, Spin, Empty,
-    Card, Row, Col, Statistic, Typography,
+    Card, Row, Col, Statistic, Typography, Alert,
 } from 'antd';
 import {
     EditOutlined, DeleteOutlined, TeamOutlined,
@@ -23,6 +23,7 @@ const ManageOpportunities = () => {
     const { token } = useContext(AuthContext);
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [filter, setFilter] = useState('All');
 
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -41,6 +42,7 @@ const ManageOpportunities = () => {
     const fetchMyOpportunities = async () => {
         try {
             setLoading(true);
+            setLoadError('');
             const response = await axios.get(`${API_URL}/opportunities/my`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -55,7 +57,9 @@ const ManageOpportunities = () => {
             setOpportunities(mappedOpportunities);
         } catch (error) {
             console.error('Error fetching NGO opportunities:', error);
-            notification.error({ message: 'Error', description: 'Failed to load opportunities' });
+            const msg = error.response?.data?.message || 'Failed to load opportunities';
+            setLoadError(msg);
+            notification.error({ message: 'Error', description: msg });
         } finally {
             setLoading(false);
         }
@@ -411,6 +415,22 @@ const ManageOpportunities = () => {
                 </div>
 
                 {/* Table */}
+                {loadError && !loading && (
+                    <div className="mo-alert-wrap">
+                        <Alert
+                            type="error"
+                            showIcon
+                            message="Could not load opportunities"
+                            description={loadError}
+                            action={
+                                <Button size="small" onClick={fetchMyOpportunities}>
+                                    Retry
+                                </Button>
+                            }
+                        />
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="mo-loading">
                         <Spin size="large" />

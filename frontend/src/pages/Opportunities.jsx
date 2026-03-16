@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Modal, Descriptions, Divider, message, Spin } from 'antd';
+import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Modal, Descriptions, Divider, message, Spin, Alert } from 'antd';
 import {
     SearchOutlined,
     EnvironmentOutlined,
@@ -27,6 +27,7 @@ const Opportunities = () => {
     const navigate = useNavigate();
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [selectedOpp, setSelectedOpp] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [applying, setApplying] = useState(false);
@@ -38,11 +39,14 @@ const Opportunities = () => {
     const fetchOpportunities = async () => {
         try {
             setLoading(true);
+            setLoadError('');
             const response = await axios.get(`${API_URL}/opportunities`);
             setOpportunities(response.data);
         } catch (error) {
             console.error('Error fetching opportunities:', error);
-            message.error('Failed to load opportunities');
+            const msg = error.response?.data?.message || 'Failed to load opportunities';
+            setLoadError(msg);
+            message.error(msg);
         } finally {
             setLoading(false);
         }
@@ -59,6 +63,11 @@ const Opportunities = () => {
     };
 
     const handleApply = async () => {
+        if (!selectedOpp) {
+            message.error('Please select an opportunity first.');
+            return;
+        }
+
         if (!user) {
             message.info('Please log in to apply for opportunities');
             navigate('/login');
@@ -124,18 +133,33 @@ const Opportunities = () => {
                 {/* Listing Section */}
                 <div className="opp-list-section">
                     <div className="container">
-                        <div className="opp-list-header">
-                            <Title level={3} style={{ margin: 0 }}>Featured Opportunities</Title>
-                            <Space>
-                                <FilterOutlined />
-                                <Text type="secondary">Showing {opportunities.length} opportunities</Text>
-                            </Space>
-                        </div>
+                    <div className="opp-list-header">
+                        <Title level={3} style={{ margin: 0 }}>Featured Opportunities</Title>
+                        <Space>
+                            <FilterOutlined />
+                            <Text type="secondary">Showing {opportunities.length} opportunities</Text>
+                        </Space>
+                    </div>
+
+                    {loadError && (
+                        <Alert
+                            type="error"
+                            showIcon
+                            className="opp-alert"
+                            message="Could not load opportunities"
+                            description={loadError}
+                            action={
+                                <Button size="small" onClick={fetchOpportunities}>
+                                    Retry
+                                </Button>
+                            }
+                        />
+                    )}
                         
-                        {loading ? (
-                            <div style={{ textAlign: 'center', padding: '50px' }}>
-                                <Spin size="large" />
-                            </div>
+                    {loading ? (
+                        <div style={{ textAlign: 'center', padding: '50px' }}>
+                            <Spin size="large" />
+                        </div>
                         ) : opportunities.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '50px' }}>
                                 <Text type="secondary">No opportunities available at the moment.</Text>
