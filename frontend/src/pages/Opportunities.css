@@ -100,6 +100,11 @@
     gap: 12px;
 }
 
+.opp-alert {
+    margin: 0 0 20px;
+    border-radius: 12px !important;
+}
+
 .opp-list-header h3.ant-typography {
     font-weight: 800 !important;
     color: #0f172a !important;

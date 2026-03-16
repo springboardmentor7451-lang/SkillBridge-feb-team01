@@ -57,6 +57,14 @@
   gap: 12px;
 }
 
+.mo-alert-wrap {
+  padding: 16px 24px 0;
+}
+
+.mo-alert-wrap .ant-alert {
+  border-radius: 12px !important;
+}
+
 /* ── Table ── */
 .mo-table .ant-table-thead>tr>th {
   background: #f8fafc !important;

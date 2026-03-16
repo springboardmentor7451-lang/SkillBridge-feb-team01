@@ -11,8 +11,13 @@ import Opportunity from "../models/Opportunity.js";
 
 const router = express.Router();
 
+// Helper to safely build a case-insensitive RegExp from user input
+const escapeRegex = (value) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 // @route   GET /api/opportunities
-// @desc    Get all open opportunities (public)
+// @desc    Get all open opportunities (public) with optional filters
 // @access  Public
 router.get("/", async (req, res, next) => {
   try {
@@ -23,36 +28,33 @@ router.get("/", async (req, res, next) => {
     };
 
     if (skill) {
-      filter.skillsRequired = { $regex: skill, $options: "i" };
+      filter.skillsRequired = { $in: [skill] };
     }
 
     if (location) {
-      filter.location = { $regex: location, $options: "i" };
+      const regex = new RegExp(escapeRegex(location), "i");
+      filter.location = { $regex: regex };
     }
 
     if (search) {
-      filter.title = { $regex: search, $options: "i" };
+      const regex = new RegExp(escapeRegex(search), "i");
+      filter.$or = [
+        { title: regex },
+        { description: regex }
+      ];
     }
 
     const opportunities = await Opportunity.find(filter)
       .populate("createdBy", "organization_name")
       .sort({ createdAt: -1 });
 
-    const formatted = opportunities.map((opp) => ({
-      title: opp.title,
-      description: opp.description,
-      required_skills: opp.skillsRequired,
-      duration: opp.duration,
-      location: opp.location,
-      organization_name: opp.createdBy?.organization_name
-    }));
-
-    res.status(200).json(formatted);
+    res.status(200).json(opportunities);
 
   } catch (error) {
     next(error);
   }
 });
+
 
 // @route   GET /api/opportunities/my
 // @desc    Get opportunities created by logged-in NGO

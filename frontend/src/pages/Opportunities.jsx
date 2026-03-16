@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Modal, Descriptions, Divider, message, Spin } from 'antd';
+import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Modal, Descriptions, Divider, message, Spin, Alert, Input, Select } from 'antd';
 import {
     SearchOutlined,
     EnvironmentOutlined,
@@ -15,6 +15,7 @@ import './Opportunities.css';
 
 const { Content } = Layout;
 const { Title, Paragraph, Text } = Typography;
+const { Option } = Select;
 
 const typeColors = {
     Remote: 'blue',
@@ -26,25 +27,104 @@ const Opportunities = () => {
     const { user, token } = useContext(AuthContext);
     const navigate = useNavigate();
     const [opportunities, setOpportunities] = useState([]);
+    const [allOpportunities, setAllOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [selectedOpp, setSelectedOpp] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [applying, setApplying] = useState(false);
+    const [filters, setFilters] = useState({ skill: '', location: '', search: '' });
+    const [uniqueSkills, setUniqueSkills] = useState([]);
+    const [uniqueLocations, setUniqueLocations] = useState([]);
+
+    useEffect(() => {
+        fetchAllOpportunities();
+        if (user && user.role === 'volunteer') {
+            fetchMyApplications();
+        }
+    }, [user]);
 
     useEffect(() => {
         fetchOpportunities();
-    }, []);
+    }, [filters]);
+
+    const fetchAllOpportunities = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/opportunities`);
+            setAllOpportunities(response.data);
+            extractUniqueValues(response.data);
+        } catch (error) {
+            console.error('Error fetching all opportunities:', error);
+        }
+    };
+
+    const fetchMyApplications = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/applications/my`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const appliedIds = new Set(response.data.map(app => app.opportunity_id._id));
+            setAppliedOpportunities(appliedIds);
+        } catch (error) {
+            console.error('Error fetching my applications:', error);
+        }
+    };
+
+    const extractUniqueValues = (opps) => {
+        const skills = new Set();
+        const locations = new Set();
+        opps.forEach(opp => {
+            opp.skillsRequired?.forEach(skill => skills.add(skill));
+            if (opp.location) locations.add(opp.location);
+        });
+        setUniqueSkills(Array.from(skills).sort());
+        setUniqueLocations(Array.from(locations).sort());
+    };
 
     const fetchOpportunities = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/opportunities`);
+            setLoadError('');
+            const params = {};
+            if (filters.skill) params.skill = filters.skill;
+            if (filters.location) params.location = filters.location;
+            if (filters.search) params.search = filters.search;
+            const response = await axios.get(`${API_URL}/opportunities`, { params });
             setOpportunities(response.data);
         } catch (error) {
             console.error('Error fetching opportunities:', error);
-            message.error('Failed to load opportunities');
+            const msg = error.response?.data?.message || 'Failed to load opportunities';
+            setLoadError(msg);
+            message.error(msg);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleApplyForCard = async (opp) => {
+        try {
+            setApplying(true);
+            await axios.post(
+                `${API_URL}/applications`,
+                { opportunity_id: opp._id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+            message.success('Application submitted successfully!');
+            setAppliedOpportunities(prev => new Set([...prev, opp._id]));
+        } catch (error) {
+            console.error('Apply error:', error);
+            const msg = error.response?.data?.message || 'Failed to submit application';
+            message.error(msg);
+        } finally {
+            setApplying(false);
         }
     };
 
@@ -59,6 +139,11 @@ const Opportunities = () => {
     };
 
     const handleApply = async () => {
+        if (!selectedOpp) {
+            message.error('Please select an opportunity first.');
+            return;
+        }
+
         if (!user) {
             message.info('Please log in to apply for opportunities');
             navigate('/login');
@@ -81,7 +166,7 @@ const Opportunities = () => {
                     }
                 }
             );
-            
+
             message.success('Application submitted successfully!');
             setIsModalVisible(false);
         } catch (error) {
@@ -131,7 +216,61 @@ const Opportunities = () => {
                                 <Text type="secondary">Showing {opportunities.length} opportunities</Text>
                             </Space>
                         </div>
-                        
+
+                        {/* Filters */}
+                        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                            <Col xs={24} sm={8}>
+                                <Input
+                                    placeholder="Search opportunities..."
+                                    prefix={<SearchOutlined />}
+                                    value={filters.search}
+                                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                                    allowClear
+                                />
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Select
+                                    placeholder="Filter by skill"
+                                    style={{ width: '100%' }}
+                                    value={filters.skill || undefined}
+                                    onChange={(value) => handleFilterChange('skill', value)}
+                                    allowClear
+                                >
+                                    {uniqueSkills.map(skill => (
+                                        <Option key={skill} value={skill}>{skill}</Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Select
+                                    placeholder="Filter by location"
+                                    style={{ width: '100%' }}
+                                    value={filters.location || undefined}
+                                    onChange={(value) => handleFilterChange('location', value)}
+                                    allowClear
+                                >
+                                    {uniqueLocations.map(location => (
+                                        <Option key={location} value={location}>{location}</Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                        </Row>
+
+                        {loadError && (
+                            <Alert
+                                type="error"
+                                showIcon
+                                className="opp-alert"
+                                message="Could not load opportunities"
+                                description={loadError}
+                                action={
+                                    <Button size="small" onClick={fetchOpportunities}>
+                                        Retry
+                                    </Button>
+                                }
+                            />
+                        )}
+
                         {loading ? (
                             <div style={{ textAlign: 'center', padding: '50px' }}>
                                 <Spin size="large" />
@@ -156,8 +295,20 @@ const Opportunities = () => {
                                                     icon={<EyeOutlined />}
                                                 >
                                                     View Details
-                                                </Button>
-                                            ]}
+                                                </Button>,
+                                                user && user.role === 'volunteer' ? (
+                                                    <Button
+                                                        type={appliedOpportunities.has(opp._id) ? "default" : "primary"}
+                                                        block
+                                                        key="apply"
+                                                        disabled={appliedOpportunities.has(opp._id)}
+                                                        loading={applying}
+                                                        onClick={() => handleApplyForCard(opp)}
+                                                    >
+                                                        {appliedOpportunities.has(opp._id) ? "Applied" : "Apply"}
+                                                    </Button>
+                                                ) : null
+                                            ].filter(Boolean)}
                                         >
                                             <div className="opp-card-header">
                                                 {/* Use a default tag if type is not available */}
@@ -197,9 +348,9 @@ const Opportunities = () => {
                                 <Button key="close" onClick={handleCloseModal}>
                                     Close
                                 </Button>,
-                                <Button 
-                                    key="apply" 
-                                    type="primary" 
+                                <Button
+                                    key="apply"
+                                    type="primary"
                                     onClick={handleApply}
                                     loading={applying}
                                 >
