@@ -1,7 +1,9 @@
 import axios from "axios";
 
+export const API_URL = "http://127.0.0.1:5000/api";
+
 const api = axios.create({
-  baseURL: "http://127.0.0.1:5000/api",
+  baseURL: API_URL,
 });
 
 // attach token

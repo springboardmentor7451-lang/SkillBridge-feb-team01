@@ -16,10 +16,39 @@ const router = express.Router();
 // @access  Public
 router.get("/", async (req, res, next) => {
   try {
-    const opportunities = await Opportunity.find()
+    const { skill, location, search } = req.query;
+
+    const filter = {
+      status: "open"
+    };
+
+    if (skill) {
+      filter.skillsRequired = { $regex: skill, $options: "i" };
+    }
+
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    if (search) {
+      filter.title = { $regex: search, $options: "i" };
+    }
+
+    const opportunities = await Opportunity.find(filter)
       .populate("createdBy", "organization_name")
       .sort({ createdAt: -1 });
-    res.status(200).json(opportunities);
+
+    const formatted = opportunities.map((opp) => ({
+      title: opp.title,
+      description: opp.description,
+      required_skills: opp.skillsRequired,
+      duration: opp.duration,
+      location: opp.location,
+      organization_name: opp.createdBy?.organization_name
+    }));
+
+    res.status(200).json(formatted);
+
   } catch (error) {
     next(error);
   }
