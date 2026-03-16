@@ -27,22 +27,23 @@ router.get("/", async (req, res, next) => {
       status: "open"
     };
 
-    if (skill) {
-      filter.skillsRequired = { $in: [skill] };
-    }
+   if (skill) {
+  const regex = new RegExp(escapeRegex(skill), "i");
+  filter.skillsRequired = { $elemMatch: { $regex: regex } };
+}
 
-    if (location) {
-      const regex = new RegExp(escapeRegex(location), "i");
-      filter.location = { $regex: regex };
-    }
+   if (location) {
+  const regex = new RegExp(escapeRegex(location), "i");
+  filter.location = { $regex: regex };
+  }
 
-    if (search) {
-      const regex = new RegExp(escapeRegex(search), "i");
-      filter.$or = [
-        { title: regex },
-        { description: regex }
-      ];
-    }
+   if (search) {
+  const regex = new RegExp(escapeRegex(search), "i");
+  filter.$or = [
+    { title: regex },
+    { description: regex }
+  ];
+}
 
     const opportunities = await Opportunity.find(filter)
       .populate("createdBy", "organization_name")

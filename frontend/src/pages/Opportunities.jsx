@@ -27,6 +27,7 @@ const Opportunities = () => {
     const { user, token } = useContext(AuthContext);
     const navigate = useNavigate();
     const [opportunities, setOpportunities] = useState([]);
+    const [appliedOpportunities, setAppliedOpportunities] = useState([]);
     const [allOpportunities, setAllOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
