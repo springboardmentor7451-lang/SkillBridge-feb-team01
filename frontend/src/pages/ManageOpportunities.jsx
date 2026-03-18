@@ -1,10 +1,8 @@
-// KEEP THIS ENTIRE VERSION (MAIN BRANCH VERSION)
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     Table, Tag, Badge, Button, Modal, Form, Input, Select,
     notification, Tooltip, List, Avatar, Space, Spin, Empty,
-    Card, Row, Col, Statistic, Typography,
+    Card, Row, Col, Statistic, Typography, Alert,
 } from 'antd';
 import {
     EditOutlined, DeleteOutlined, TeamOutlined,
@@ -12,6 +10,9 @@ import {
     EnvironmentOutlined, ClockCircleOutlined,
     AppstoreOutlined, FilterOutlined,
 } from '@ant-design/icons';
+import axios from 'axios';
+import AuthContext from '../context/AuthContext';
+import { API_URL } from '../services/api';
 import ApplicationModal from '../components/ApplicationModal';
 import './ManageOpportunities.css';
 
@@ -19,34 +20,11 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
 
-const initialOpportunities = [
-    {
-        id: '1',
-        title: 'English Teacher for Underprivileged Kids',
-        description: 'We are looking for patient and experienced English teachers to help underprivileged children improve their language skills in after-school programs.',
-        skills: ['Teaching', 'English', 'Patience'],
-        location: 'Mumbai, India',
-        duration: '3 Months',
-        status: 'Open',
-        createdAt: '2024-10-15',
-        applicants: [],
-    },
-    {
-        id: '2',
-        title: 'Website Redesign Volunteer',
-        description: 'Help us redesign and rebuild our NGO website.',
-        skills: ['Web Design', 'UI/UX', 'React'],
-        location: 'Remote',
-        duration: '1 Month',
-        status: 'Closed',
-        createdAt: '2024-09-01',
-        applicants: [],
-    }
-];
-
 const ManageOpportunities = () => {
+    const { token } = useContext(AuthContext);
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [filter, setFilter] = useState('All');
 
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -57,11 +35,36 @@ const ManageOpportunities = () => {
     const [editForm] = Form.useForm();
 
     useEffect(() => {
-        setTimeout(() => {
-            setOpportunities(initialOpportunities);
+        if (token) {
+            fetchMyOpportunities();
+        }
+    }, [token]);
+
+    const fetchMyOpportunities = async () => {
+        try {
+            setLoading(true);
+            setLoadError('');
+            const response = await axios.get(`${API_URL}/opportunities/my`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // Map _id to id, skillsRequired to skills, and capitalize status for the frontend
+            const mappedOpportunities = response.data.map(opp => ({
+                ...opp,
+                id: opp._id,
+                skills: opp.skillsRequired || [],
+                status: opp.status === 'open' ? 'Open' : 'Closed',
+                applicants: opp.applicants || []
+            }));
+            setOpportunities(mappedOpportunities);
+        } catch (error) {
+            console.error('Error fetching NGO opportunities:', error);
+            const msg = error.response?.data?.message || 'Failed to load opportunities';
+            setLoadError(msg);
+            notification.error({ message: 'Error', description: msg });
+        } finally {
             setLoading(false);
-        }, 500);
-    }, []);
+        }
+    };
 
     const filteredOpportunities = opportunities.filter(opp => {
         if (filter === 'All') return true;
@@ -71,41 +74,103 @@ const ManageOpportunities = () => {
     const openCount = opportunities.filter(o => o.status === 'Open').length;
     const closedCount = opportunities.filter(o => o.status === 'Closed').length;
 
-    const handleCreateSubmit = (values) => {
-        const newOpp = {
-            id: String(Date.now()),
-            ...values,
-            skills: values.skills || [],
-            applicants: [],
-            createdAt: new Date().toISOString().split('T')[0],
-        };
-        setOpportunities(prev => [newOpp, ...prev]);
-        createForm.resetFields();
-        setIsCreateModalVisible(false);
-        notification.success({ message: 'Opportunity Created' });
+    // ── Create ──
+    const handleCreateSubmit = async (values) => {
+        try {
+            const payload = {
+                title: values.title,
+                description: values.description,
+                location: values.location,
+                duration: values.duration,
+                skillsRequired: values.skills, // Backend expects skillsRequired
+            };
+
+            const response = await axios.post(`${API_URL}/opportunities`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setIsCreateModalVisible(false);
+            createForm.resetFields();
+            notification.success({ message: 'Opportunity Created', description: `"${values.title}" is now live.` });
+            
+            // Refetch to get the latest data including MongoDB ID
+            fetchMyOpportunities();
+        } catch (error) {
+            console.error('Error creating opportunity:', error);
+            notification.error({ message: 'Error', description: error.response?.data?.message || 'Failed to create opportunity' });
+        }
     };
 
     const showEditModal = (record) => {
         setCurrentOpportunity(record);
-        editForm.setFieldsValue({ ...record });
+        editForm.setFieldsValue({ ...record, status: record.status.toLowerCase() }); // Backend expects lowercase
         setIsEditModalVisible(true);
     };
 
-    const handleEditSubmit = (values) => {
-        setOpportunities(prev =>
-            prev.map(o =>
-                o.id === currentOpportunity.id ? { ...o, ...values } : o
-            )
-        );
-        setIsEditModalVisible(false);
-        notification.success({ message: 'Opportunity Updated' });
+    const handleEditSubmit = async (values) => {
+        try {
+            const payload = {
+                title: values.title,
+                description: values.description,
+                location: values.location,
+                duration: values.duration,
+                skillsRequired: values.skills,
+                status: values.status,
+            };
+
+            await axios.put(`${API_URL}/opportunities/${currentOpportunity.id}`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setIsEditModalVisible(false);
+            notification.success({ message: 'Opportunity Updated', description: 'Changes saved successfully.' });
+            fetchMyOpportunities();
+        } catch (error) {
+            console.error('Error updating opportunity:', error);
+            notification.error({ message: 'Error', description: error.response?.data?.message || 'Failed to update opportunity' });
+        }
     };
 
+    // ── Delete/Close ──
+    const handleDeleteClose = (record) => {
+        const isClosed = record.status === 'Closed';
+        Modal.confirm({
+            title: isClosed ? 'Delete Opportunity?' : 'Close Opportunity?',
+            content: isClosed
+                ? 'This action is permanent. The opportunity will be removed.'
+                : 'This will mark the opportunity as closed.',
+            okText: isClosed ? 'Delete' : 'Close It',
+            okType: 'danger',
+            cancelText: 'Cancel',
+            onOk: async () => {
+                try {
+                    if (isClosed) {
+                        await axios.delete(`${API_URL}/opportunities/${record.id}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        notification.success({ message: 'Deleted', description: 'The opportunity was removed.' });
+                    } else {
+                        await axios.put(`${API_URL}/opportunities/${record.id}`, { status: 'closed' }, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        notification.info({ message: 'Closed', description: 'The opportunity is now marked as closed.' });
+                    }
+                    fetchMyOpportunities();
+                } catch (error) {
+                    console.error('Action error:', error);
+                    notification.error({ message: 'Error', description: 'Failed to complete action' });
+                }
+            },
+        });
+    };
+
+    // ── View Applications (using ApplicationModal component) ──
     const showApplicationModal = (record) => {
         setCurrentOpportunity(record);
         setIsApplicationModalVisible(true);
     };
 
+    // ── Table columns ──
     const columns = [
         {
             title: 'Title',
@@ -149,16 +214,46 @@ const ManageOpportunities = () => {
                         type="text"
                         icon={<DeleteOutlined />}
                         danger
-                        onClick={() =>
-                            setOpportunities(prev =>
-                                prev.filter(o => o.id !== record.id)
-                            )
-                        }
+                        onClick={() => handleDeleteClose(record)}
                     />
                 </Space>
             ),
         },
     ];
+
+    const SharedFormFields = () => (
+        <>
+            <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Please enter a title' }]}>
+                <Input placeholder="e.g. English Teacher for Underprivileged Kids" />
+            </Form.Item>
+            <Form.Item name="description" label="Description" rules={[{ required: true, message: 'Please enter a description' }]}>
+                <TextArea rows={3} placeholder="Describe the opportunity..." maxLength={500} showCount />
+            </Form.Item>
+            <Row gutter={16}>
+                <Col span={12}>
+                    <Form.Item name="location" label="Location" rules={[{ required: true }]}>
+                        <Input placeholder="City, Country or Remote" />
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item name="duration" label="Duration" rules={[{ required: true }]}>
+                        <Input placeholder="e.g. 3 Months" />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Form.Item name="skills" label="Required Skills" rules={[{ required: true, message: 'Add at least one skill' }]}>
+                <Select mode="tags" placeholder="Type and press Enter to add skills" />
+            </Form.Item>
+            {isEditModalVisible && (
+                <Form.Item name="status" label="Status" initialValue="open">
+                    <Select>
+                        <Option value="open">Open</Option>
+                        <Option value="closed">Closed</Option>
+                    </Select>
+                </Form.Item>
+            )}
+        </>
+    );
 
     return (
         <div>
@@ -197,6 +292,23 @@ const ManageOpportunities = () => {
                     </Button>
                 </Space>
 
+                {/* Table */}
+                {loadError && !loading && (
+                    <div className="mo-alert-wrap">
+                        <Alert
+                            type="error"
+                            showIcon
+                            message="Could not load opportunities"
+                            description={loadError}
+                            action={
+                                <Button size="small" onClick={fetchMyOpportunities}>
+                                    Retry
+                                </Button>
+                            }
+                        />
+                    </div>
+                )}
+
                 {loading ? (
                     <Spin />
                 ) : filteredOpportunities.length === 0 ? (
@@ -218,18 +330,7 @@ const ManageOpportunities = () => {
                 footer={null}
             >
                 <Form form={createForm} layout="vertical" onFinish={handleCreateSubmit}>
-                    <Form.Item name="title" label="Title" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="location" label="Location" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="status" label="Status" initialValue="Open">
-                        <Select>
-                            <Option value="Open">Open</Option>
-                            <Option value="Closed">Closed</Option>
-                        </Select>
-                    </Form.Item>
+                    <SharedFormFields />
                     <Form.Item>
                         <Button type="primary" htmlType="submit">
                             Create
@@ -245,18 +346,7 @@ const ManageOpportunities = () => {
                 footer={null}
             >
                 <Form form={editForm} layout="vertical" onFinish={handleEditSubmit}>
-                    <Form.Item name="title" label="Title" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="location" label="Location" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="status" label="Status">
-                        <Select>
-                            <Option value="Open">Open</Option>
-                            <Option value="Closed">Closed</Option>
-                        </Select>
-                    </Form.Item>
+                    <SharedFormFields />
                     <Form.Item>
                         <Button type="primary" htmlType="submit">
                             Save Changes

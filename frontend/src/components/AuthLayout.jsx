@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Avatar, Dropdown, Space, Typography, Badge, Tooltip, notification } from 'antd';
+import { Layout, Avatar, Dropdown, Space, Typography, Badge, Tooltip, notification, Spin } from 'antd';
 import {
     AppstoreOutlined,
     UserOutlined,
@@ -12,36 +12,49 @@ import {
     CheckCircleOutlined,
     InfoCircleOutlined,
 } from '@ant-design/icons';
+import axios from 'axios';
 import AuthContext from '../context/AuthContext';
+import { API_URL } from '../services/api';
 import './AuthLayout.css';
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
-// Sample notifications data
-const sampleNotifications = [
-    { id: 1, title: 'New Applicant', desc: 'Alice Smith applied to "English Teacher" opportunity.', time: '2 min ago', read: false },
-    { id: 2, title: 'Opportunity Closed', desc: 'Website Redesign is now closed to applications.', time: '1 hr ago', read: false },
-    { id: 3, title: 'System Update', desc: 'New features have been added to your dashboard.', time: 'Yesterday', read: true },
-];
-
 const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
-    const { user, logout } = useContext(AuthContext);
+    const { user, token, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
-    const [notifications, setNotifications] = useState(() => {
-        const saved = localStorage.getItem('app_notifications');
-        try {
-            return saved ? JSON.parse(saved) : sampleNotifications;
-        } catch (e) {
-            return sampleNotifications;
-        }
-    });
+    const [notifications, setNotifications] = useState([]);
+    const [loadingNotifs, setLoadingNotifs] = useState(false);
 
     useEffect(() => {
-        localStorage.setItem('app_notifications', JSON.stringify(notifications));
-    }, [notifications]);
+        if (token) {
+            fetchNotifications();
+            // Poll for new notifications every 60 seconds
+            const interval = setInterval(fetchNotifications, 60000);
+            return () => clearInterval(interval);
+        }
+    }, [token]);
+
+    const fetchNotifications = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/notifications`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // Map backend fields to what component expects
+            const formatted = response.data.map(n => ({
+                id: n._id,
+                title: n.title,
+                desc: n.message,
+                time: new Date(n.createdAt).toLocaleDateString() + ' ' + new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                read: n.isRead,
+            }));
+            setNotifications(formatted);
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -50,12 +63,37 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    const markAllRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const markAllRead = async () => {
+        try {
+            await axios.put(`${API_URL}/notifications/read-all`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
+        }
     };
 
-    const clearAllNotifications = () => {
-        setNotifications([]);
+    const markSingleRead = async (id) => {
+        try {
+            await axios.put(`${API_URL}/notifications/${id}/read`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNotifications(prev => prev.map(x => x.id === id ? { ...x, read: true } : x));
+        } catch (error) {
+            console.error('Failed to mark as read:', error);
+        }
+    };
+
+    const clearAllNotifications = async () => {
+        try {
+            await axios.delete(`${API_URL}/notifications`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNotifications([]);
+        } catch (error) {
+            console.error('Failed to clear notifications:', error);
+        }
     };
 
     // Nav items based on role
@@ -97,7 +135,9 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
             label: (
                 <div
                     className={`notif-item${n.read ? '' : ' notif-unread'}`}
-                    onClick={() => setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                    onClick={() => {
+                        if (!n.read) markSingleRead(n.id);
+                    }}
                 >
                     <div className="notif-dot-wrap">
                         {!n.read && <span className="notif-dot" />}

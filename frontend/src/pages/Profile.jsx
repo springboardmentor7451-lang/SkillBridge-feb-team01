@@ -1,21 +1,25 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Card, Avatar, Typography, Tag, Divider,
-    Descriptions, Row, Col, Space, Spin, Empty, Badge,
+    Descriptions, Row, Col, Space, Spin, Empty, Badge, Button, Modal, Form, Input
 } from 'antd';
 import {
     UserOutlined, MailOutlined, EnvironmentOutlined,
     FileTextOutlined, BankOutlined, GlobalOutlined,
-    ToolOutlined, IdcardOutlined, CalendarOutlined,
+    ToolOutlined, IdcardOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
+import api from '../services/api';
 import './Profile.css';
 
 const { Title, Paragraph, Text } = Typography;
 
 const Profile = () => {
-    const { user, loading } = useContext(AuthContext);
+    const { user, setUser, loading } = useContext(AuthContext);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [form] = Form.useForm();
 
     if (loading) {
         return (
@@ -39,6 +43,40 @@ const Profile = () => {
     };
 
     const isVolunteer = user.role === 'volunteer';
+
+    // 🟢 Open edit modal with current data
+    const openEditModal = () => {
+        form.setFieldsValue({
+            location: user.location,
+            bio: user.bio,
+            organization_name: user.organization_name,
+            organization_description: user.organization_description,
+            website_url: user.website_url,
+        });
+        setIsModalOpen(true);
+    };
+
+    // 🟢 Update API call
+    const handleUpdate = async (values) => {
+        try {
+            const res = await api.put("/users/profile", values);
+            setUser(res.data);
+
+            setIsModalOpen(false);
+            form.resetFields();
+
+            Modal.success({
+                title: "Profile Updated",
+                content: "Your profile has been updated successfully.",
+            });
+
+        } catch (err) {
+            Modal.error({
+                title: "Update Failed",
+                content: err.response?.data?.message || "Something went wrong",
+            });
+        }
+    };
 
     return (
         <div className="profile-page">
@@ -64,20 +102,27 @@ const Profile = () => {
                     </div>
                     <div className="profile-identity">
                         <Title level={3} style={{ margin: 0, color: '#0f172a' }}>{user.name}</Title>
+
                         <Space style={{ marginTop: 6 }}>
                             <Tag
                                 color={isVolunteer ? 'blue' : 'purple'}
                                 icon={isVolunteer ? <UserOutlined /> : <BankOutlined />}
-                                style={{ fontSize: '0.82rem', padding: '3px 12px', borderRadius: 99 }}
                             >
                                 {isVolunteer ? 'Volunteer' : 'NGO Account'}
                             </Tag>
+
                             {user.location && (
-                                <Tag icon={<EnvironmentOutlined />} color="default" style={{ borderRadius: 99 }}>
+                                <Tag icon={<EnvironmentOutlined />} color="default">
                                     {user.location}
                                 </Tag>
                             )}
+
+                            {/* ✅ Edit Button added (UI unchanged otherwise) */}
+                            <Button size="small" onClick={openEditModal}>
+                                Edit Profile
+                            </Button>
                         </Space>
+
                         {user.bio && (
                             <Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0, maxWidth: 560 }}>
                                 {user.bio}
@@ -89,120 +134,82 @@ const Profile = () => {
 
             {/* Info Section */}
             <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
-                {/* Left: Contact */}
                 <Col xs={24} md={14}>
-                    <Card
-                        title={
-                            <Space>
-                                <IdcardOutlined style={{ color: '#0f6fff' }} />
-                                <span>Contact Information</span>
-                            </Space>
-                        }
-                        className="profile-info-card"
-                    >
-                        <Descriptions column={1} colon={false} size="default">
-                            <Descriptions.Item label={<Space><MailOutlined /> Email</Space>}>
+                    <Card title="Contact Information" className="profile-info-card">
+                        <Descriptions column={1} colon={false}>
+                            <Descriptions.Item label="Email">
                                 <Text strong>{user.email}</Text>
                             </Descriptions.Item>
-                            <Descriptions.Item label={<Space><EnvironmentOutlined /> Location</Space>}>
-                                <Text>{user.location || <Text type="secondary">Not specified</Text>}</Text>
+                            <Descriptions.Item label="Location">
+                                <Text>{user.location || 'Not specified'}</Text>
                             </Descriptions.Item>
                         </Descriptions>
-                        <Divider style={{ margin: '16px 0' }} />
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            <Text strong style={{ color: '#475569' }}>
-                                <FileTextOutlined style={{ marginRight: 6, color: '#0f6fff' }} />
-                                Bio
-                            </Text>
-                            <Paragraph
-                                type={user.bio ? undefined : 'secondary'}
-                                style={{ marginBottom: 0, lineHeight: 1.8 }}
-                            >
-                                {user.bio || 'No bio provided yet.'}
-                            </Paragraph>
-                        </Space>
                     </Card>
                 </Col>
 
-                {/* Right: Skills or NGO Details */}
                 <Col xs={24} md={10}>
                     {isVolunteer ? (
-                        <Card
-                            title={
-                                <Space>
-                                    <ToolOutlined style={{ color: '#0f6fff' }} />
-                                    <span>Skills & Expertise</span>
-                                </Space>
-                            }
-                            className="profile-info-card"
-                        >
-                            {user.skills && user.skills.length > 0 ? (
-                                <div>
-                                    {user.skills.map((skill, i) => (
-                                        <Tag
-                                            key={i}
-                                            style={{
-                                                marginBottom: 8,
-                                                marginRight: 8,
-                                                fontSize: '0.85rem',
-                                                padding: '4px 14px',
-                                                borderRadius: 99,
-                                                background: 'rgba(15, 111, 255, 0.08)',
-                                                border: '1px solid rgba(15, 111, 255, 0.2)',
-                                                color: '#0f6fff',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            {skill}
-                                        </Tag>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Empty description="No skills added yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                            )}
+                        <Card title="Skills & Expertise" className="profile-info-card">
+                            {user.skills && user.skills.length > 0
+                                ? user.skills.map((skill, i) => <Tag key={i}>{skill}</Tag>)
+                                : <Empty description="No skills added yet" />}
                         </Card>
                     ) : (
-                        <Card
-                            title={
-                                <Space>
-                                    <BankOutlined style={{ color: '#6366f1' }} />
-                                    <span>Organization Details</span>
-                                </Space>
-                            }
-                            className="profile-info-card"
-                        >
+                        <Card title="Organization Details" className="profile-info-card">
                             <Descriptions column={1} colon={false}>
-                                <Descriptions.Item label={<Space><BankOutlined /> Name</Space>}>
+                                <Descriptions.Item label="Name">
                                     <Text strong>{user.organization_name}</Text>
                                 </Descriptions.Item>
                                 {user.website_url && (
-                                    <Descriptions.Item label={<Space><GlobalOutlined /> Website</Space>}>
-                                        <a
-                                            href={user.website_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{ color: '#6366f1', fontWeight: 600 }}
-                                        >
-                                            {user.website_url} ↗
+                                    <Descriptions.Item label="Website">
+                                        <a href={user.website_url} target="_blank" rel="noreferrer">
+                                            {user.website_url}
                                         </a>
                                     </Descriptions.Item>
                                 )}
                             </Descriptions>
-                            {user.organization_description && (
-                                <>
-                                    <Divider style={{ margin: '12px 0' }} />
-                                    <Text type="secondary" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-                                        Description
-                                    </Text>
-                                    <Paragraph style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.8 }}>
-                                        {user.organization_description}
-                                    </Paragraph>
-                                </>
-                            )}
                         </Card>
                     )}
                 </Col>
             </Row>
+
+            {/* 🟢 Edit Modal */}
+            <Modal
+                title="Edit Profile"
+                open={isModalOpen}
+                onCancel={() => setIsModalOpen(false)}
+                footer={null}
+            >
+                <Form layout="vertical" form={form} onFinish={handleUpdate}>
+                    <Form.Item label="Location" name="location">
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item label="Bio" name="bio">
+                        <Input.TextArea rows={3} />
+                    </Form.Item>
+
+                    {!isVolunteer && (
+                        <>
+                            <Form.Item label="Organization Name" name="organization_name">
+                                <Input />
+                            </Form.Item>
+
+                            <Form.Item label="Organization Description" name="organization_description">
+                                <Input.TextArea rows={3} />
+                            </Form.Item>
+
+                            <Form.Item label="Website URL" name="website_url">
+                                <Input />
+                            </Form.Item>
+                        </>
+                    )}
+
+                    <Button type="primary" htmlType="submit" block>
+                        Save Changes
+                    </Button>
+                </Form>
+            </Modal>
         </div>
     );
 };

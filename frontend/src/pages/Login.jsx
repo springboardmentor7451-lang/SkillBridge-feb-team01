@@ -55,6 +55,7 @@ const Login = () => {
                     name="login_form"
                     layout="vertical"
                     onFinish={onSubmit}
+                    onValuesChange={() => error && setError(null)}
                     className="login-form-antd"
                     size="large"
                 >

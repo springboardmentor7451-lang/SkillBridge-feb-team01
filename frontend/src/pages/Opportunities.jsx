@@ -1,77 +1,21 @@
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Empty, notification } from 'antd';
+import React, { useContext, useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Layout, Row, Col, Typography, Button, Card, Tag, Space, Modal, Descriptions, Divider, message, Spin, Alert, Input, Select } from 'antd';
 import {
     SearchOutlined,
     EnvironmentOutlined,
     ClockCircleOutlined,
-    TeamOutlined,
     FilterOutlined,
-    CheckCircleOutlined as SuccessIcon
+    EyeOutlined
 } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
+import axios from 'axios';
+import { API_URL } from '../services/api';
 import './Opportunities.css';
 
 const { Content } = Layout;
 const { Title, Paragraph, Text } = Typography;
-
-// Sample listed opportunities for demonstration
-const sampleOpportunities = [
-    {
-        id: 1,
-        title: 'English Teacher for Underprivileged Kids',
-        org: 'Bright Futures NGO',
-        skills: ['Teaching', 'English', 'Patience'],
-        location: 'Mumbai, India',
-        duration: '3 Months',
-        type: 'On-site',
-    },
-    {
-        id: 2,
-        title: 'Website Redesign Volunteer',
-        org: 'GreenEarth Foundation',
-        skills: ['Web Design', 'UI/UX', 'React'],
-        location: 'Remote',
-        duration: '1 Month',
-        type: 'Remote',
-    },
-    {
-        id: 3,
-        title: 'Community Health Camp Volunteer',
-        org: 'HealthBridge Africa',
-        skills: ['Healthcare', 'First Aid', 'Coordination'],
-        location: 'Nairobi, Kenya',
-        duration: '2 Weeks',
-        type: 'On-site',
-    },
-    {
-        id: 4,
-        title: 'Social Media Manager',
-        org: 'Clean Oceans Initiative',
-        skills: ['Marketing', 'Social Media', 'Content Creation'],
-        location: 'Remote',
-        duration: '2 Months',
-        type: 'Remote',
-    },
-    {
-        id: 5,
-        title: 'Legal Aid Consultant',
-        org: 'Justice For All',
-        skills: ['Law', 'Research', 'Pro-bono'],
-        location: 'New York, USA',
-        duration: '6 Months',
-        type: 'Hybrid',
-    },
-    {
-        id: 6,
-        title: 'Data Analyst for Impact Reporting',
-        org: 'Feed the Future',
-        skills: ['Data Analysis', 'Excel', 'Python'],
-        location: 'Remote',
-        duration: '3 Months',
-        type: 'Remote',
-    },
-];
+const { Option } = Select;
 
 const typeColors = {
     Remote: 'blue',
@@ -80,14 +24,159 @@ const typeColors = {
 };
 
 const Opportunities = () => {
-    const { user } = useContext(AuthContext);
+    const { user, token } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const [opportunities, setOpportunities] = useState([]);
+    const [appliedOpportunities, setAppliedOpportunities] = useState([]);
+    const [allOpportunities, setAllOpportunities] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
+    const [selectedOpp, setSelectedOpp] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [applying, setApplying] = useState(false);
+    const [filters, setFilters] = useState({ skill: '', location: '', search: '' });
+    const [uniqueSkills, setUniqueSkills] = useState([]);
+    const [uniqueLocations, setUniqueLocations] = useState([]);
 
-    const handleApply = (title) => {
-        notification.success({
-            message: 'Application Sent!',
-            description: `You have successfully applied for "${title}". The organization will review your profile shortly.`,
-            placement: 'topRight',
+    useEffect(() => {
+        fetchAllOpportunities();
+        if (user && user.role === 'volunteer') {
+            fetchMyApplications();
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchOpportunities();
+    }, [filters]);
+
+    const fetchAllOpportunities = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/opportunities`);
+            setAllOpportunities(response.data);
+            extractUniqueValues(response.data);
+        } catch (error) {
+            console.error('Error fetching all opportunities:', error);
+        }
+    };
+
+    const fetchMyApplications = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/applications/my`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const appliedIds = new Set(response.data.map(app => app.opportunity_id._id));
+            setAppliedOpportunities(appliedIds);
+        } catch (error) {
+            console.error('Error fetching my applications:', error);
+        }
+    };
+
+    const extractUniqueValues = (opps) => {
+        const skills = new Set();
+        const locations = new Set();
+        opps.forEach(opp => {
+            opp.skillsRequired?.forEach(skill => skills.add(skill));
+            if (opp.location) locations.add(opp.location);
         });
+        setUniqueSkills(Array.from(skills).sort());
+        setUniqueLocations(Array.from(locations).sort());
+    };
+
+    const fetchOpportunities = async () => {
+        try {
+            setLoading(true);
+            setLoadError('');
+            const params = {};
+            if (filters.skill) params.skill = filters.skill;
+            if (filters.location) params.location = filters.location;
+            if (filters.search) params.search = filters.search;
+            const response = await axios.get(`${API_URL}/opportunities`, { params });
+            setOpportunities(response.data);
+        } catch (error) {
+            console.error('Error fetching opportunities:', error);
+            const msg = error.response?.data?.message || 'Failed to load opportunities';
+            setLoadError(msg);
+            message.error(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleApplyForCard = async (opp) => {
+        try {
+            setApplying(true);
+            await axios.post(
+                `${API_URL}/applications`,
+                { opportunity_id: opp._id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+            message.success('Application submitted successfully!');
+            setAppliedOpportunities(prev => new Set([...prev, opp._id]));
+        } catch (error) {
+            console.error('Apply error:', error);
+            const msg = error.response?.data?.message || 'Failed to submit application';
+            message.error(msg);
+        } finally {
+            setApplying(false);
+        }
+    };
+
+    const handleViewDetails = (opp) => {
+        setSelectedOpp(opp);
+        setIsModalVisible(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalVisible(false);
+        setSelectedOpp(null);
+    };
+
+    const handleApply = async () => {
+        if (!selectedOpp) {
+            message.error('Please select an opportunity first.');
+            return;
+        }
+
+        if (!user) {
+            message.info('Please log in to apply for opportunities');
+            navigate('/login');
+            return;
+        }
+
+        if (user.role !== 'volunteer') {
+            message.error('Only volunteers can apply for opportunities');
+            return;
+        }
+
+        try {
+            setApplying(true);
+            await axios.post(
+                `${API_URL}/applications`,
+                { opportunity_id: selectedOpp._id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            message.success('Application submitted successfully!');
+            setIsModalVisible(false);
+        } catch (error) {
+            console.error('Apply error:', error);
+            const msg = error.response?.data?.message || 'Failed to submit application';
+            message.error(msg);
+        } finally {
+            setApplying(false);
+        }
     };
 
     return (
@@ -109,7 +198,7 @@ const Opportunities = () => {
                                     </Paragraph>
                                     <Link to="/register">
                                         <Button type="primary" size="large" icon={<SearchOutlined />} className="opp-cta-btn">
-                                            Browse & Apply
+                                            Explore Opportunities
                                         </Button>
                                     </Link>
                                 </Col>
@@ -125,71 +214,190 @@ const Opportunities = () => {
                             <Title level={3} style={{ margin: 0 }}>Featured Opportunities</Title>
                             <Space>
                                 <FilterOutlined />
-                                <Text type="secondary">Showing {sampleOpportunities.length} opportunities</Text>
+                                <Text type="secondary">Showing {opportunities.length} opportunities</Text>
                             </Space>
                         </div>
-                        <Row gutter={[24, 24]}>
-                            {sampleOpportunities.map(opp => (
-                                <Col key={opp.id} xs={24} sm={12} lg={8}>
-                                    <Card
-                                        hoverable
-                                        className="opportunity-card"
-                                        actions={[
-                                            user ? (
+
+                        {/* Filters */}
+                        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                            <Col xs={24} sm={8}>
+                                <Input
+                                    placeholder="Search opportunities..."
+                                    prefix={<SearchOutlined />}
+                                    value={filters.search}
+                                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                                    allowClear
+                                />
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Select
+                                    placeholder="Filter by skill"
+                                    style={{ width: '100%' }}
+                                    value={filters.skill || undefined}
+                                    onChange={(value) => handleFilterChange('skill', value)}
+                                    allowClear
+                                >
+                                    {uniqueSkills.map(skill => (
+                                        <Option key={skill} value={skill}>{skill}</Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Select
+                                    placeholder="Filter by location"
+                                    style={{ width: '100%' }}
+                                    value={filters.location || undefined}
+                                    onChange={(value) => handleFilterChange('location', value)}
+                                    allowClear
+                                >
+                                    {uniqueLocations.map(location => (
+                                        <Option key={location} value={location}>{location}</Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                        </Row>
+
+                        {loadError && (
+                            <Alert
+                                type="error"
+                                showIcon
+                                className="opp-alert"
+                                message="Could not load opportunities"
+                                description={loadError}
+                                action={
+                                    <Button size="small" onClick={fetchOpportunities}>
+                                        Retry
+                                    </Button>
+                                }
+                            />
+                        )}
+
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '50px' }}>
+                                <Spin size="large" />
+                            </div>
+                        ) : opportunities.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '50px' }}>
+                                <Text type="secondary">No opportunities available at the moment.</Text>
+                            </div>
+                        ) : (
+                            <Row gutter={[24, 24]}>
+                                {opportunities.map(opp => (
+                                    <Col key={opp._id} xs={24} sm={12} lg={8}>
+                                        <Card
+                                            hoverable
+                                            className="opportunity-card"
+                                            actions={[
                                                 <Button
                                                     type="primary"
                                                     block
-                                                    key="apply"
-                                                    onClick={() => handleApply(opp.title)}
-                                                    icon={<SuccessIcon />}
+                                                    key="view"
+                                                    onClick={() => handleViewDetails(opp)}
+                                                    icon={<EyeOutlined />}
                                                 >
-                                                    Apply Now
-                                                </Button>
-                                            ) : (
-                                                <Link to="/register" key="apply" style={{ width: '100%' }}>
-                                                    <Button type="primary" block>Apply Now</Button>
-                                                </Link>
-                                            )
-                                        ]}
-                                    >
-                                        <div className="opp-card-header">
-                                            <Tag color={typeColors[opp.type] || 'default'} className="type-tag">{opp.type}</Tag>
-                                        </div>
-                                        <Title level={4} className="opp-card-title">{opp.title}</Title>
-                                        <Text type="secondary" className="opp-org">{opp.org}</Text>
-                                        <div className="opp-meta">
-                                            <Space>
-                                                <EnvironmentOutlined />
-                                                <Text type="secondary">{opp.location}</Text>
-                                            </Space>
-                                            <Space>
-                                                <ClockCircleOutlined />
-                                                <Text type="secondary">{opp.duration}</Text>
-                                            </Space>
-                                        </div>
-                                        <div className="opp-skills">
-                                            {opp.skills.map(skill => (
-                                                <Tag key={skill} color="geekblue">{skill}</Tag>
-                                            ))}
-                                        </div>
-                                    </Card>
-                                </Col>
-                            ))}
-                        </Row>
-
-                        {/* Signup CTA - Only show for guests */}
-                        {!user && (
-                            <div className="opp-signup-cta">
-                                <TeamOutlined className="opp-cta-icon" />
-                                <Title level={4}>See All Opportunities</Title>
-                                <Paragraph type="secondary" style={{ marginBottom: 24 }}>
-                                    Sign up or log in to view all available opportunities and apply directly.
-                                </Paragraph>
-                                <Link to="/register">
-                                    <Button type="primary" size="large">Create Free Account</Button>
-                                </Link>
-                            </div>
+                                                    View Details
+                                                </Button>,
+                                                user && user.role === 'volunteer' ? (
+                                                    <Button
+                                                        type={appliedOpportunities.has(opp._id) ? "default" : "primary"}
+                                                        block
+                                                        key="apply"
+                                                        disabled={appliedOpportunities.has(opp._id)}
+                                                        loading={applying}
+                                                        onClick={() => handleApplyForCard(opp)}
+                                                    >
+                                                        {appliedOpportunities.has(opp._id) ? "Applied" : "Apply"}
+                                                    </Button>
+                                                ) : null
+                                            ].filter(Boolean)}
+                                        >
+                                            <div className="opp-card-header">
+                                                {/* Use a default tag if type is not available */}
+                                                <Tag color={typeColors[opp.type || 'On-site']} className="type-tag">{opp.type || 'On-site'}</Tag>
+                                            </div>
+                                            <Title level={4} className="opp-card-title">{opp.title}</Title>
+                                            <Text type="secondary" className="opp-org">
+                                                {opp.createdBy?.organization_name || 'Organization'}
+                                            </Text>
+                                            <div className="opp-meta">
+                                                <Space>
+                                                    <EnvironmentOutlined />
+                                                    <Text type="secondary">{opp.location}</Text>
+                                                </Space>
+                                                <Space>
+                                                    <ClockCircleOutlined />
+                                                    <Text type="secondary">{opp.duration}</Text>
+                                                </Space>
+                                            </div>
+                                            <div className="opp-skills">
+                                                {opp.skillsRequired && opp.skillsRequired.map(skill => (
+                                                    <Tag key={skill} color="geekblue">{skill}</Tag>
+                                                ))}
+                                            </div>
+                                        </Card>
+                                    </Col>
+                                ))}
+                            </Row>
                         )}
+
+                        {/* Detail Modal */}
+                        <Modal
+                            title={<Title level={3} style={{ margin: 0 }}>{selectedOpp?.title}</Title>}
+                            open={isModalVisible}
+                            onCancel={handleCloseModal}
+                            footer={[
+                                <Button key="close" onClick={handleCloseModal}>
+                                    Close
+                                </Button>,
+                                <Button
+                                    key="apply"
+                                    type="primary"
+                                    onClick={handleApply}
+                                    loading={applying}
+                                >
+                                    Apply Now
+                                </Button>
+                            ]}
+                            width={700}
+                            centered
+                            className="opp-detail-modal"
+                        >
+                            {selectedOpp && (
+                                <div className="modal-content">
+                                    <div style={{ marginBottom: 20 }}>
+                                        <Tag color={typeColors[selectedOpp.type || 'On-site']} style={{ fontSize: '0.9rem', padding: '4px 12px', borderRadius: 20 }}>
+                                            {selectedOpp.type || 'On-site'}
+                                        </Tag>
+                                        <span style={{ marginLeft: 12, fontSize: '1rem', color: 'rgba(0, 0, 0, 0.45)' }}>
+                                            {selectedOpp.createdBy?.organization_name || 'Organization'}
+                                        </span>
+                                    </div>
+
+                                    <Descriptions column={1} bordered className="opp-descriptions">
+                                        <Descriptions.Item label="Location">
+                                            <Space><EnvironmentOutlined />{selectedOpp.location}</Space>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Duration">
+                                            <Space><ClockCircleOutlined />{selectedOpp.duration}</Space>
+                                        </Descriptions.Item>
+                                    </Descriptions>
+
+                                    <Divider orientation="left">Skills Required</Divider>
+                                    <div style={{ marginBottom: 24 }}>
+                                        {selectedOpp.skillsRequired && selectedOpp.skillsRequired.map(skill => (
+                                            <Tag key={skill} color="geekblue" style={{ marginBottom: 8, padding: '4px 12px', borderRadius: 6 }}>
+                                                {skill}
+                                            </Tag>
+                                        ))}
+                                    </div>
+
+                                    <Divider orientation="left">Opportunity Description</Divider>
+                                    <Paragraph style={{ fontSize: '1.05rem', lineHeight: '1.6', color: '#475569' }}>
+                                        {selectedOpp.description}
+                                    </Paragraph>
+                                </div>
+                            )}
+                        </Modal>
                     </div>
                 </div>
             </Content>
@@ -198,3 +406,4 @@ const Opportunities = () => {
 };
 
 export default Opportunities;
+

@@ -1,7 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-
-const API_BASE = 'http://127.0.0.1:5000/api';
+import api from '../services/api';
 
 // 🔁 Toggle this ONLY if backend is not ready
 const USE_MOCK_AUTH = false; // ⚠️ Set to false for real backend integration
@@ -34,27 +32,26 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
+  // 🔁 whenever token changes → fetch user
   useEffect(() => {
     if (USE_MOCK_AUTH) {
-      const mockUser =
-        MOCK_ROLE === 'ngo' ? mockNGOUser : mockVolunteerUser;
+      const mockUser = MOCK_ROLE === 'ngo' ? mockNGOUser : mockVolunteerUser;
       setUser(mockUser);
       setLoading(false);
       return;
     }
 
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
     } else {
-      delete axios.defaults.headers.common['Authorization'];
       setLoading(false);
     }
   }, [token]);
 
+  // 👤 get logged-in user
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/users/profile`);
+      const res = await api.get('/users/profile');
       setUser(res.data);
     } catch (error) {
       console.error('Error fetching user', error);
@@ -64,27 +61,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 🔐 login
   const login = async (email, password) => {
-    const res = await axios.post(`${API_BASE}/auth/login`, {
+    const res = await api.post('/auth/login', {
       email,
       password,
     });
 
     localStorage.setItem('token', res.data.token);
     setToken(res.data.token);
-    setUser(res.data.user || res.data);
+    setUser(res.data);
+
     return res.data;
   };
 
+  // 📝 register
   const register = async (userData) => {
-    const res = await axios.post(`${API_BASE}/auth/register`, userData);
+    const res = await api.post('/auth/register', userData);
 
     localStorage.setItem('token', res.data.token);
     setToken(res.data.token);
-    setUser(res.data.user || res.data);
+    setUser(res.data);
+
     return res.data;
   };
 
+  // 🚪 logout
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);

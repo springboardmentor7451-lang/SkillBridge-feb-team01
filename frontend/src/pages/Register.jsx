@@ -89,6 +89,7 @@ const Register = () => {
                     form={form}
                     layout="vertical"
                     onFinish={onSubmit}
+                    onValuesChange={() => error && setError(null)}
                     initialValues={{ role: 'volunteer' }}
                     className="register-form-antd"
                 >
