@@ -7,6 +7,7 @@ const navigationConfig = {
     volunteer: [
         { path: '/dashboard', label: 'Dashboard', icon: '📊' },
         { path: '/opportunities', label: 'Browse Opportunities', icon: '🔍' },
+        { path: '/my-applications', label: 'My Applications', icon: '📝' },
         { path: '/profile', label: 'Profile', icon: '👤' }
     ],
     ngo: [

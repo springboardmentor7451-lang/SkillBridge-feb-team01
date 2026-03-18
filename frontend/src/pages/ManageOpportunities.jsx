@@ -12,6 +12,7 @@ import {
     EnvironmentOutlined, ClockCircleOutlined,
     AppstoreOutlined, FilterOutlined,
 } from '@ant-design/icons';
+import ApplicationModal from '../components/ApplicationModal';
 import './ManageOpportunities.css';
 
 const { Option } = Select;
@@ -50,6 +51,7 @@ const ManageOpportunities = () => {
 
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [isApplicationModalVisible, setIsApplicationModalVisible] = useState(false);
     const [currentOpportunity, setCurrentOpportunity] = useState(null);
     const [createForm] = Form.useForm();
     const [editForm] = Form.useForm();
@@ -99,6 +101,11 @@ const ManageOpportunities = () => {
         notification.success({ message: 'Opportunity Updated' });
     };
 
+    const showApplicationModal = (record) => {
+        setCurrentOpportunity(record);
+        setIsApplicationModalVisible(true);
+    };
+
     const columns = [
         {
             title: 'Title',
@@ -126,6 +133,13 @@ const ManageOpportunities = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space>
+                    <Button
+                        type="text"
+                        icon={<TeamOutlined />}
+                        onClick={() => showApplicationModal(record)}
+                    >
+                        View Applications
+                    </Button>
                     <Button
                         type="text"
                         icon={<EditOutlined />}
@@ -250,6 +264,13 @@ const ManageOpportunities = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+
+            <ApplicationModal
+                visible={isApplicationModalVisible}
+                onClose={() => setIsApplicationModalVisible(false)}
+                opportunityId={currentOpportunity?.id}
+                opportunityTitle={currentOpportunity?.title}
+            />
         </div>
     );
 };

@@ -21,6 +21,7 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
+import MyApplications from './pages/MyApplications';
 
 // Ant Design global theme
 const antdTheme = {
@@ -143,6 +144,14 @@ function App() {
               element={
                 <DashboardRoute allowedRoles={['ngo']} pageTitle="Manage Opportunities">
                   <ManageOpportunities />
+                </DashboardRoute>
+              }
+            />
+            <Route
+              path="/my-applications"
+              element={
+                <DashboardRoute allowedRoles={['volunteer']} pageTitle="My Applications">
+                  <MyApplications />
                 </DashboardRoute>
               }
             />

@@ -66,6 +66,7 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
         ]
         : [
             { key: '/opportunities', icon: <AppstoreOutlined />, label: 'Opportunities' },
+            { key: '/my-applications', icon: <CheckCircleOutlined />, label: 'My Applications' },
             { key: '/profile', icon: <UserOutlined />, label: 'My Profile' },
         ];
 
