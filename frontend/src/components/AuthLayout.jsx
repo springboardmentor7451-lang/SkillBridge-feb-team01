@@ -11,6 +11,8 @@ import {
     MenuUnfoldOutlined,
     CheckCircleOutlined,
     InfoCircleOutlined,
+    StarOutlined,
+    MessageOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
@@ -101,10 +103,13 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
         ? [
             { key: '/manage-opportunities', icon: <AppstoreOutlined />, label: 'Manage Opportunities' },
             { key: '/ngo-profile', icon: <BankOutlined />, label: 'NGO Profile' },
+            { key: '/chat', icon: <MessageOutlined />, label: 'Messages' },
         ]
         : [
+            { key: '/matches', icon: <StarOutlined />, label: 'My Matches' },
             { key: '/opportunities', icon: <AppstoreOutlined />, label: 'Opportunities' },
             { key: '/profile', icon: <UserOutlined />, label: 'My Profile' },
+            { key: '/chat', icon: <MessageOutlined />, label: 'Messages' },
         ];
 
     const notificationItems = [
