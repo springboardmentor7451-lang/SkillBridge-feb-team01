@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ConfigProvider } from 'antd';
 import { AuthProvider } from './context/AuthContext';
 import AuthContext from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 
 // Public layout components
 import Navbar from './components/Navbar';
@@ -21,6 +22,9 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
+import Matches from './pages/Matches';
+import Chat from './pages/Chat';
+import Notifications from './pages/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Ant Design global theme
@@ -113,44 +117,71 @@ function App() {
     <ConfigProvider theme={antdTheme}>
       <Router>
         <AuthProvider>
-          <Routes>
-            {/* ── Public routes ── */}
-            <Route path="/" element={<LandingRoute />} />
-            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-            <Route path="/organizations" element={<PublicRoute><Organizations /></PublicRoute>} />
-            <Route path="/opportunities" element={<SmartOpportunityRoute />} />
-            <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
+          <SocketProvider>
+            <Routes>
+              {/* ── Public routes ── */}
+              <Route path="/" element={<LandingRoute />} />
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+              <Route path="/organizations" element={<PublicRoute><Organizations /></PublicRoute>} />
+              <Route path="/opportunities" element={<SmartOpportunityRoute />} />
+              <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
 
-            {/* ── Dashboard routes (sidebar layout) ── */}
-            <Route
-              path="/profile"
-              element={
-                <DashboardRoute pageTitle="My Profile">
-                  <Profile />
-                </DashboardRoute>
-              }
-            />
-            <Route
-              path="/ngo-profile"
-              element={
-                <DashboardRoute allowedRoles={['ngo']} pageTitle="NGO Profile">
-                  <NGOProfileForm />
-                </DashboardRoute>
-              }
-            />
-            <Route
-              path="/manage-opportunities"
-              element={
-                <DashboardRoute allowedRoles={['ngo']} pageTitle="Manage Opportunities">
-                  <ManageOpportunities />
-                </DashboardRoute>
-              }
-            />
+              {/* ── Dashboard routes (sidebar layout) ── */}
+              <Route
+                path="/profile"
+                element={
+                  <DashboardRoute pageTitle="My Profile">
+                    <Profile />
+                  </DashboardRoute>
+                }
+              />
+              <Route
+                path="/ngo-profile"
+                element={
+                  <DashboardRoute allowedRoles={['ngo']} pageTitle="NGO Profile">
+                    <NGOProfileForm />
+                  </DashboardRoute>
+                }
+              />
+              <Route
+                path="/manage-opportunities"
+                element={
+                  <DashboardRoute allowedRoles={['ngo']} pageTitle="Manage Opportunities">
+                    <ManageOpportunities />
+                  </DashboardRoute>
+                }
+              />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route
+                path="/matches"
+                element={
+                  <DashboardRoute pageTitle="Matches">
+                    <Matches />
+                  </DashboardRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <DashboardRoute pageTitle="Notifications">
+                    <Notifications />
+                  </DashboardRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <DashboardRoute allowedRoles={['volunteer', 'ngo']} pageTitle="Chat">
+                    <Chat />
+                  </DashboardRoute>
+                }
+              />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </SocketProvider>
         </AuthProvider>
       </Router>
     </ConfigProvider>
