@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, List, Tag, Button, Space, Spin, Empty, notification, Typography, Avatar } from 'antd';
-import { UserOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Modal, List, Tag, Button, Space, Spin, Empty, notification, Typography, Avatar, message } from 'antd';
+import { UserOutlined, CheckOutlined, CloseOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import {
   getApplicationsByOpportunity,
   acceptApplication,
   rejectApplication,
 } from '../services/applicationService';
+import { useSocket } from '../context/SocketContext';
 
 const { Text, Paragraph } = Typography;
 
@@ -13,12 +14,33 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const { socket } = useSocket();
 
   useEffect(() => {
     if (visible && opportunityId) {
       fetchApplications();
     }
   }, [visible, opportunityId]);
+
+  // Listen for real-time application status updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusUpdate = (data) => {
+      // Update local state when status changes
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === data.applicationId ? { ...app, status: data.status } : app
+        )
+      );
+    };
+
+    socket.on('application:statusUpdated', handleStatusUpdate);
+
+    return () => {
+      socket.off('application:statusUpdated', handleStatusUpdate);
+    };
+  }, [socket]);
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -35,7 +57,7 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
     }
   };
 
-  const handleAccept = async (applicationId) => {
+  const handleAccept = async (applicationId, applicantName) => {
     setActionLoading(prev => ({ ...prev, [applicationId]: true }));
     try {
       await acceptApplication(applicationId);
@@ -44,9 +66,16 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
           app.id === applicationId ? { ...app, status: 'Accepted' } : app
         )
       );
-      notification.success({
-        message: 'Success',
-        description: 'Application accepted',
+      
+      // Show success toast with applicant name
+      message.success({
+        content: (
+          <span>
+            <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
+            Application from <strong>{applicantName}</strong> has been accepted!
+          </span>
+        ),
+        duration: 4,
       });
     } catch (error) {
       notification.error({
@@ -58,7 +87,7 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
     }
   };
 
-  const handleReject = async (applicationId) => {
+  const handleReject = async (applicationId, applicantName) => {
     setActionLoading(prev => ({ ...prev, [applicationId]: true }));
     try {
       await rejectApplication(applicationId);
@@ -67,9 +96,16 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
           app.id === applicationId ? { ...app, status: 'Rejected' } : app
         )
       );
-      notification.success({
-        message: 'Success',
-        description: 'Application rejected',
+      
+      // Show info toast with applicant name
+      message.info({
+        content: (
+          <span>
+            <CloseCircleOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+            Application from <strong>{applicantName}</strong> has been rejected
+          </span>
+        ),
+        duration: 4,
       });
     } catch (error) {
       notification.error({
@@ -115,7 +151,7 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
                   <Button
                     type="primary"
                     icon={<CheckOutlined />}
-                    onClick={() => handleAccept(app.id)}
+                    onClick={() => handleAccept(app.id, app.applicantName || app.name)}
                     disabled={app.status !== 'Pending'}
                     loading={actionLoading[app.id]}
                   >
@@ -124,7 +160,7 @@ const ApplicationModal = ({ visible, onClose, opportunityId, opportunityTitle })
                   <Button
                     danger
                     icon={<CloseOutlined />}
-                    onClick={() => handleReject(app.id)}
+                    onClick={() => handleReject(app.id, app.applicantName || app.name)}
                     disabled={app.status !== 'Pending'}
                     loading={actionLoading[app.id]}
                   >
