@@ -31,6 +31,9 @@ const Navbar = () => {
     const navItems = [
         { key: '/opportunities', label: <Link to="/opportunities">Opportunities</Link>, icon: <AppstoreOutlined /> },
         { key: '/organizations', label: <Link to="/organizations">For NGOs</Link>, icon: <BankOutlined /> },
+        { key: '/matches', label: <Link to="/matches">Matches</Link>, icon: <AppstoreOutlined /> },
+        { key: '/chat', label: <Link to="/chat">Chat</Link>, icon: <UserOutlined /> },
+        { key: '/notifications', label: <Link to="/notifications">Notifications</Link>, icon: <InfoCircleOutlined /> },
         { key: '/about', label: <Link to="/about">About Us</Link>, icon: <InfoCircleOutlined /> },
     ];
 
