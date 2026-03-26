@@ -8,6 +8,7 @@ import userRoutes from "../routes/userRoutes.js";
 import opportunityRoutes from "../routes/opportunityRoutes.js";
 import applicationRoutes from "../routes/applicationRoutes.js";
 import notificationRoutes from "../routes/notificationRoutes.js";
+import messageRoutes from "../routes/messageRoutes.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/opportunities", opportunityRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/messages", messageRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
@@ -31,11 +33,5 @@ app.get("/", (req, res) => {
 
 // Error Middleware
 app.use(errorHandler);
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
 
 export default app;
