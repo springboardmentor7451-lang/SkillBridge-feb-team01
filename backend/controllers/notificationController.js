@@ -59,3 +59,4 @@ export const clearAllNotifications = async (req, res, next) => {
         next(error);
     }
 };
+
