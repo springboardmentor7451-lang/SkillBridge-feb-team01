@@ -24,10 +24,7 @@ import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
 import Matches from './pages/Matches';
 import Chat from './pages/Chat';
-<<<<<<< HEAD
 import Notifications from './pages/Notifications';
-=======
->>>>>>> b5042f6 (Added new code)
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Ant Design global theme
@@ -130,33 +127,6 @@ function App() {
               <Route path="/opportunities" element={<SmartOpportunityRoute />} />
               <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
 
-<<<<<<< HEAD
-              {/* ── Dashboard routes (sidebar layout) ── */}
-              <Route
-                path="/profile"
-                element={
-                  <DashboardRoute pageTitle="My Profile">
-                    <Profile />
-                  </DashboardRoute>
-                }
-              />
-              <Route
-                path="/ngo-profile"
-                element={
-                  <DashboardRoute allowedRoles={['ngo']} pageTitle="NGO Profile">
-                    <NGOProfileForm />
-                  </DashboardRoute>
-                }
-              />
-              <Route
-                path="/manage-opportunities"
-                element={
-                  <DashboardRoute allowedRoles={['ngo']} pageTitle="Manage Opportunities">
-                    <ManageOpportunities />
-                  </DashboardRoute>
-                }
-              />
-=======
             {/* ── Dashboard routes (sidebar layout) ── */}
             <Route
               path="/profile"
@@ -198,7 +168,6 @@ function App() {
                 </DashboardRoute>
               }
             />
->>>>>>> b5042f6 (Added new code)
 
               <Route
                 path="/matches"

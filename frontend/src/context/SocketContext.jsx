@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const socketClient = io(API_URL, {
+        const socketClient = io("http://localhost:5000", {
             autoConnect: false,
             transports: ['websocket'],
             auth: {

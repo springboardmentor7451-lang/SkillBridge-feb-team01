@@ -17,6 +17,13 @@ const messageSchema = new mongoose.Schema({
     required: [true, "Receiver is required"],
   },
 
+   // ✅ ADD THIS (for milestone requirement)
+  opportunity_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Opportunity",
+    index: true,
+  },
+
   content: {
     type: String,
     required: [true, "Message content is required"],

@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-import React from 'react';
-import { Typography } from 'antd';
-
-const { Title, Paragraph } = Typography;
-
-const Matches = () => {
-    return (
-        <div style={{ padding: 24 }}>
-            <Title level={2}>Matches</Title>
-            <Paragraph>
-                Here are your volunteer/NGO matches. This route is protected and requires authentication.
-            </Paragraph>
-=======
 import React, { useContext, useState, useEffect } from 'react';
 import {
     Row, Col, Typography, Button, Card, Tag, Space,
@@ -271,7 +257,6 @@ const Matches = () => {
                     })}
                 </Row>
             )}
->>>>>>> b5042f6 (Added new code)
         </div>
     );
 };

@@ -1,5 +1,7 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
+dotenv.config();
 import app from "./api/index.js";
 import initChatSocket from "./sockets/chatSocket.js";
 
