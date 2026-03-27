@@ -1,0 +1,103 @@
+.dashboard-navbar-content {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-lg);
+    background-color: var(--navbar-bg);
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-toggle-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    color: var(--text-primary);
+    transition: color 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover {
+    color: var(--primary-color);
+}
+
+.navbar-center {
+    flex: 1;
+    text-align: center;
+}
+
+.navbar-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.user-role-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.user-email {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.logout-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: #45a049;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .sidebar-toggle-btn {
+        display: block;
+    }
+    
+    .user-email {
+        display: none;
+    }
+    
+    .navbar-title {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-role-badge {
+        display: none;
+    }
+}

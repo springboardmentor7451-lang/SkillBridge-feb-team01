@@ -1,0 +1,10 @@
+.my-applications-container {
+  padding: 24px;
+}
+
+.my-applications-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
