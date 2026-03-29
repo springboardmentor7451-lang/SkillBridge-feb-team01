@@ -1,126 +1,5 @@
-<<<<<<< HEAD
-import React, { useEffect, useState, useContext } from 'react';
-import { Navigate } from 'react-router-dom';
-import { Typography, Input, message, List, Spin } from 'antd';
-import AuthContext from '../context/AuthContext';
-import { useSocket } from '../context/SocketContext';
-import api from '../services/api';
-
-const { Title } = Typography;
-
-const Chat = () => {
-    const { user } = useContext(AuthContext);
-    const { socket, isConnected } = useSocket();
-    const [input, setInput] = useState('');
-    const [messages, setMessages] = useState([]);
-    const [loadingHistory, setLoadingHistory] = useState(false);
-
-    const addMessage = (msg) => {
-        if (!msg || (!msg._id && !msg.id)) {
-            setMessages((prev) => [...prev, msg]);
-            return;
-        }
-        setMessages((prev) => {
-            const exists = prev.some((m) => (m._id && msg._id && m._id === msg._id) || (m.id && msg.id && m.id === msg.id));
-            if (exists) return prev;
-            return [...prev, msg];
-        });
-    };
-
-    useEffect(() => {
-        const loadHistory = async () => {
-            if (!user?.id && !user?._id) return;
-
-            setLoadingHistory(true);
-            const userId = user._id || user.id;
-
-            try {
-                const res = await api.get(`/messages/${userId}`);
-                if (Array.isArray(res.data)) {
-                    setMessages(res.data);
-                }
-            } catch (err) {
-                console.error('Failed to load chat history', err);
-                message.error('Could not load chat history.');
-            } finally {
-                setLoadingHistory(false);
-            }
-        };
-
-        loadHistory();
-    }, [user]);
-
-    useEffect(() => {
-        if (!socket) return;
-
-        const onMessage = (payload) => {
-            addMessage(payload);
-        };
-
-        socket.on('chat:message', onMessage);
-
-        return () => {
-            socket.off('chat:message', onMessage);
-        };
-    }, [socket]);
-
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (!['volunteer', 'ngo'].includes(user.role)) {
-        message.error('Chat is available only to volunteers or NGOs.');
-        return <Navigate to="/" replace />;
-    }
-
-    const sendMessage = () => {
-        if (!input.trim()) return;
-        if (!socket || !isConnected) {
-            message.error('Socket is not connected yet.');
-            return;
-        }
-
-        const msg = { text: input.trim(), from: user.name, time: new Date().toISOString() };
-        socket.emit('chat:message', msg);
-        setMessages((prev) => [...prev, msg]);
-        setInput('');
-    };
-
-    return (
-        <div style={{ padding: 24 }}>
-            <Title level={2}>Chat</Title>
-            <p>Role: {user.role}</p>
-            <p>Socket: {isConnected ? 'Connected' : 'Connecting...'}</p>
-
-            {loadingHistory ? (
-                <div style={{ textAlign: 'center', padding: 32 }}>
-                    <Spin size="large" />
-                </div>
-            ) : (
-                <List
-                    size="small"
-                    bordered
-                    dataSource={messages}
-                    style={{ marginBottom: 16, maxHeight: 320, overflow: 'auto' }}
-                    renderItem={(item, index) => (
-                        <List.Item key={index}>
-                            <b>{item.from}:</b> {item.text}
-                        </List.Item>
-                    )}
-                />
-            )}
-
-            <Input.Search
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                enterButton="Send"
-                onSearch={sendMessage}
-                placeholder="Type a message and press Send"
-                disabled={loadingHistory}
-            />
-        </div>
-=======
 import React, { useContext, useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Layout, List, Avatar, Typography, Input, Button,
     Spin, Empty, Alert, Badge
@@ -131,6 +10,7 @@ import {
     UserOutlined,
 } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import './Chat.css';
@@ -166,8 +46,11 @@ const Chat = () => {
     const [inputText, setInputText] = useState('');
     const [sending, setSending] = useState(false);
 
+    const { socket } = useSocket();
+
     const messagesEndRef = useRef(null);
     const pollingRef = useRef(null);
+    const location = useLocation();
 
     // ── Fetch conversation list ─────────────────────────
     useEffect(() => {
@@ -181,7 +64,24 @@ const Chat = () => {
             const res = await axios.get(`${API_URL}/messages/conversations`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setConversations(res.data || []);
+            let loadedConversations = res.data || [];
+            
+            // Check for auto-open query parameters
+            const queryParams = new URLSearchParams(location.search);
+            const autoUserId = queryParams.get('userId');
+            const autoUserName = queryParams.get('name');
+            
+            if (autoUserId && autoUserName) {
+                const autoUser = { _id: autoUserId, name: autoUserName };
+                setSelectedUser(autoUser);
+                
+                // If the user isn't already in the loaded conversations, add them to the top
+                if (!loadedConversations.find(c => c.user?._id === autoUserId)) {
+                    loadedConversations = [{ user: autoUser, unread: 0, lastMessage: '' }, ...loadedConversations];
+                }
+            }
+            
+            setConversations(loadedConversations);
         } catch (err) {
             // Revert back to handling the error without injecting mock data,
             // gracefully silently falling back to empty to avoid red alert boxes.
@@ -252,20 +152,28 @@ const Chat = () => {
 
         try {
             setSending(true);
-            await axios.post(
-                `${API_URL}/messages`,
-                { receiver_id: selectedUser._id, content: text },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            // Refresh to get real message from server
-            fetchMessages(selectedUser._id, true);
+            
+            if (!socket) {
+                setSending(false);
+                setMessages(prev => prev.filter(m => m._id !== optimistic._id));
+                setMsgError('Chat is disconnected. Please refresh.');
+                return;
+            }
+
+            socket.emit("send_message", { receiver_id: selectedUser._id, content: text }, (response) => {
+                setSending(false);
+                if (response?.success) {
+                    fetchMessages(selectedUser._id, true);
+                } else {
+                    setMessages(prev => prev.filter(m => m._id !== optimistic._id));
+                    setMsgError(response?.error || 'Failed to send message.');
+                }
+            });
+            
         } catch (err) {
-            // Remove optimistic message on failure instead of keeping it
-            setMessages(prev => prev.filter(m => m._id !== optimistic._id));
-            const msg = err.response?.data?.message || 'Failed to send message.';
-            setMsgError(msg);
-        } finally {
             setSending(false);
+            setMessages(prev => prev.filter(m => m._id !== optimistic._id));
+            setMsgError(err.message || 'Failed to send message.');
         }
     };
 
@@ -465,7 +373,6 @@ const Chat = () => {
                 )}
             </Content>
         </Layout>
->>>>>>> b5042f6 (Added new code)
     );
 };
 

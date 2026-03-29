@@ -7,6 +7,11 @@ const NotificationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    type: {
+      type: String,
+      enum: ["message", "application", "general"],
+      default: "general",
+    },
     title: {
       type: String,
       required: true,
