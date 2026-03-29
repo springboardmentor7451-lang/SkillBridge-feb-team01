@@ -9,7 +9,9 @@ import {
     CheckCircleOutlined, CloseCircleOutlined, PlusOutlined,
     EnvironmentOutlined, ClockCircleOutlined,
     AppstoreOutlined, FilterOutlined,
+    MessageOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
 import { API_URL } from '../services/api';
@@ -21,6 +23,7 @@ const { Title, Text, Paragraph } = Typography;
 
 const ManageOpportunities = () => {
     const { token } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
@@ -531,7 +534,20 @@ const ManageOpportunities = () => {
                         dataSource={currentOpportunity.applicants}
                         renderItem={item => (
                             <List.Item
-                                actions={[
+                                actions={item.status === 'accepted' ? [
+                                    <Button
+                                        key="message"
+                                        type="primary"
+                                        size="small"
+                                        icon={<MessageOutlined />}
+                                        onClick={() => navigate(`/chat?userId=${item.volunteer_id}&name=${encodeURIComponent(item.name)}`)}
+                                        style={{ background: '#0f6fff', borderColor: '#0f6fff' }}
+                                    >
+                                        Message
+                                    </Button>
+                                ] : item.status === 'rejected' ? [
+                                    <Tag color="error" key="rejected">Rejected</Tag>
+                                ] : [
                                     <Button
                                         key="accept"
                                         type="primary"

@@ -8,7 +8,9 @@ import {
     ClockCircleOutlined,
     StarFilled,
     ThunderboltOutlined,
+    MessageOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
@@ -34,12 +36,13 @@ const getMatchTag = (score) => {
 };
 
 const Matches = () => {
+    const navigate = useNavigate();
     const { user, token } = useContext(AuthContext);
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
     const [applying, setApplying] = useState(null); // stores opp._id being applied to
-    const [appliedIds, setAppliedIds] = useState(new Set());
+    const [myApplications, setMyApplications] = useState([]);
 
     useEffect(() => {
         fetchMatches();
@@ -51,10 +54,9 @@ const Matches = () => {
             const res = await axios.get(`${API_URL}/applications/my`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const ids = new Set(res.data.map(app => app.opportunity_id?._id || app.opportunity_id));
-            setAppliedIds(ids);
+            setMyApplications(res.data || []);
         } catch {
-            // silently fail — applied state is cosmetic
+            // silently fail
         }
     };
 
@@ -105,7 +107,7 @@ const Matches = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             message.success('Application submitted!');
-            setAppliedIds(prev => new Set([...prev, opp._id]));
+            setMyApplications(prev => [...prev, { opportunity_id: opp._id, status: 'pending' }]);
         } catch (err) {
             const msg = err.response?.data?.message || 'Failed to submit application.';
             message.error(msg);
@@ -169,8 +171,6 @@ const Matches = () => {
                 <Row gutter={[24, 24]}>
                     {matches.map(opp => {
                         const { label, color } = getMatchTag(opp.matchScore);
-                        const isApplied = appliedIds.has(opp._id);
-                        const isApplying = applying === opp._id;
 
                         return (
                             <Col key={opp._id} xs={24} sm={12} lg={8}>
@@ -240,17 +240,42 @@ const Matches = () => {
                                         })}
                                     </div>
 
-                                    {/* Apply button */}
-                                    <Button
-                                        type={isApplied ? 'default' : 'primary'}
-                                        block
-                                        disabled={isApplied}
-                                        loading={isApplying}
-                                        onClick={() => handleApply(opp)}
-                                        style={{ marginTop: 16 }}
-                                    >
-                                        {isApplied ? '✓ Applied' : 'Apply Now'}
-                                    </Button>
+                                    {/* Additional Data for required variables */}
+                                    {(()=>{
+                                        const oppApp = myApplications.find(a => 
+                                            (a.opportunity_id?._id || a.opportunity_id) === opp._id
+                                        );
+                                        const isApplied = !!oppApp;
+                                        const appStatus = oppApp?.status;
+                                        const isApplying = applying === opp._id;
+                                        
+                                        return (
+                                            <>
+                                                {appStatus === 'accepted' ? (
+                                                    <Button
+                                                        type="primary"
+                                                        block
+                                                        icon={<MessageOutlined />}
+                                                        onClick={() => navigate(`/chat?userId=${opp.createdBy?._id || opp.createdBy}&name=${encodeURIComponent(opp.organization_name)}`)}
+                                                        style={{ marginTop: 16, background: '#10b981', borderColor: '#10b981' }}
+                                                    >
+                                                        Message NGO
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        type={isApplied ? 'default' : 'primary'}
+                                                        block
+                                                        disabled={isApplied}
+                                                        loading={isApplying}
+                                                        onClick={() => handleApply(opp)}
+                                                        style={{ marginTop: 16 }}
+                                                    >
+                                                        {isApplied ? (appStatus === 'rejected' ? '❌ Rejected' : '✓ Applied') : 'Apply Now'}
+                                                    </Button>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </Card>
                             </Col>
                         );

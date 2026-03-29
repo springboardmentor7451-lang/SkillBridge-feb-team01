@@ -1,6 +1,59 @@
 import mongoose from "mongoose";
 import Message from "../models/Message.js";
+import User from "../models/User.js";
 import { canMessage } from "../middleware/auth.js";
+
+/**
+ * @desc    Get all active conversations for the logged-in user
+ * @route   GET /api/messages/conversations
+ * @access  Private (JWT required)
+ */
+export const getConversations = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+
+    // Find all messages involving the current user
+    const messages = await Message.find({
+      $or: [{ sender_id: currentUserId }, { receiver_id: currentUserId }],
+    })
+      .sort({ timestamp: -1 })
+      .populate("sender_id", "name email role")
+      .populate("receiver_id", "name email role")
+      .lean();
+
+    // Map to extract unique conversations
+    const conversationsMap = new Map();
+
+    for (const msg of messages) {
+      // Determine the "other user" in the message
+      const isSender = msg.sender_id._id.toString() === currentUserId.toString();
+      const otherUser = isSender ? msg.receiver_id : msg.sender_id;
+
+      if (!otherUser) continue;
+
+      const otherUserId = otherUser._id.toString();
+
+      if (!conversationsMap.has(otherUserId)) {
+        conversationsMap.set(otherUserId, {
+          user: {
+            _id: otherUserId,
+            name: otherUser.name,
+            role: otherUser.role,
+          },
+          lastMessage: msg.content,
+          unread: 0,
+          timestamp: msg.timestamp,
+        });
+      }
+    }
+
+    const conversationsList = Array.from(conversationsMap.values());
+    res.status(200).json(conversationsList);
+  } catch (error) {
+    console.error("getConversations error:", error.message);
+    res.status(500).json({ message: "Server error fetching conversations" });
+  }
+};
 
 /**
  * @desc    Get conversation between the logged-in user and another user

@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Layout, List, Avatar, Typography, Input, Button,
     Spin, Empty, Alert, Badge
@@ -9,6 +10,7 @@ import {
     UserOutlined,
 } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import './Chat.css';
@@ -44,8 +46,11 @@ const Chat = () => {
     const [inputText, setInputText] = useState('');
     const [sending, setSending] = useState(false);
 
+    const { socket } = useSocket();
+
     const messagesEndRef = useRef(null);
     const pollingRef = useRef(null);
+    const location = useLocation();
 
     // ── Fetch conversation list ─────────────────────────
     useEffect(() => {
@@ -59,7 +64,24 @@ const Chat = () => {
             const res = await axios.get(`${API_URL}/messages/conversations`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setConversations(res.data || []);
+            let loadedConversations = res.data || [];
+            
+            // Check for auto-open query parameters
+            const queryParams = new URLSearchParams(location.search);
+            const autoUserId = queryParams.get('userId');
+            const autoUserName = queryParams.get('name');
+            
+            if (autoUserId && autoUserName) {
+                const autoUser = { _id: autoUserId, name: autoUserName };
+                setSelectedUser(autoUser);
+                
+                // If the user isn't already in the loaded conversations, add them to the top
+                if (!loadedConversations.find(c => c.user?._id === autoUserId)) {
+                    loadedConversations = [{ user: autoUser, unread: 0, lastMessage: '' }, ...loadedConversations];
+                }
+            }
+            
+            setConversations(loadedConversations);
         } catch (err) {
             // Revert back to handling the error without injecting mock data,
             // gracefully silently falling back to empty to avoid red alert boxes.
@@ -130,20 +152,28 @@ const Chat = () => {
 
         try {
             setSending(true);
-            await axios.post(
-                `${API_URL}/messages`,
-                { receiver_id: selectedUser._id, content: text },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            // Refresh to get real message from server
-            fetchMessages(selectedUser._id, true);
+            
+            if (!socket) {
+                setSending(false);
+                setMessages(prev => prev.filter(m => m._id !== optimistic._id));
+                setMsgError('Chat is disconnected. Please refresh.');
+                return;
+            }
+
+            socket.emit("send_message", { receiver_id: selectedUser._id, content: text }, (response) => {
+                setSending(false);
+                if (response?.success) {
+                    fetchMessages(selectedUser._id, true);
+                } else {
+                    setMessages(prev => prev.filter(m => m._id !== optimistic._id));
+                    setMsgError(response?.error || 'Failed to send message.');
+                }
+            });
+            
         } catch (err) {
-            // Remove optimistic message on failure instead of keeping it
-            setMessages(prev => prev.filter(m => m._id !== optimistic._id));
-            const msg = err.response?.data?.message || 'Failed to send message.';
-            setMsgError(msg);
-        } finally {
             setSending(false);
+            setMessages(prev => prev.filter(m => m._id !== optimistic._id));
+            setMsgError(err.message || 'Failed to send message.');
         }
     };
 

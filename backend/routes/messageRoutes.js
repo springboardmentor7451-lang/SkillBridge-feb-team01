@@ -1,7 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { protect } from "../middleware/authMiddleware.js";
-import { getConversation } from "../controllers/messageController.js";
+import { getConversation, getConversations } from "../controllers/messageController.js";
 
 const router = express.Router();
 
@@ -13,6 +13,13 @@ const messageApiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * @route   GET /api/messages/conversations
+ * @desc    Get all active conversations for logged-in user
+ * @access  Private
+ */
+router.get("/conversations", protect, messageApiLimiter, getConversations);
 
 /**
  * @route   GET /api/messages/:userId
