@@ -24,7 +24,6 @@ import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
 import Matches from './pages/Matches';
 import Chat from './pages/Chat';
-import Notifications from './pages/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Ant Design global theme
@@ -70,7 +69,7 @@ const LandingRoute = () => {
   const { user, loading } = useContext(AuthContext);
   if (loading) return null;
   if (user) {
-    return <Navigate to={user.role === 'ngo' ? '/manage-opportunities' : '/opportunities'} replace />;
+    return <Navigate to={user.role === 'ngo' ? '/manage-opportunities' : '/matches'} replace />;
   }
   return (
     <PublicRoute>
@@ -127,6 +126,7 @@ function App() {
               <Route path="/opportunities" element={<SmartOpportunityRoute />} />
               <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
 
+<<<<<<< HEAD
               {/* ── Dashboard routes (sidebar layout) ── */}
               <Route
                 path="/profile"
@@ -152,6 +152,49 @@ function App() {
                   </DashboardRoute>
                 }
               />
+=======
+            {/* ── Dashboard routes (sidebar layout) ── */}
+            <Route
+              path="/profile"
+              element={
+                <DashboardRoute pageTitle="My Profile">
+                  <Profile />
+                </DashboardRoute>
+              }
+            />
+            <Route
+              path="/ngo-profile"
+              element={
+                <DashboardRoute allowedRoles={['ngo']} pageTitle="NGO Profile">
+                  <NGOProfileForm />
+                </DashboardRoute>
+              }
+            />
+            <Route
+              path="/manage-opportunities"
+              element={
+                <DashboardRoute allowedRoles={['ngo']} pageTitle="Manage Opportunities">
+                  <ManageOpportunities />
+                </DashboardRoute>
+              }
+            />
+            <Route
+              path="/matches"
+              element={
+                <DashboardRoute allowedRoles={['volunteer']} pageTitle="My Matches">
+                  <Matches />
+                </DashboardRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <DashboardRoute pageTitle="Messages">
+                  <Chat />
+                </DashboardRoute>
+              }
+            />
+>>>>>>> b5042f6 (Added new code)
 
               <Route
                 path="/matches"
