@@ -4,7 +4,6 @@ import { ConfigProvider } from 'antd';
 import { AuthProvider } from './context/AuthContext';
 import AuthContext from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
-import { NotificationProvider } from './context/NotificationContext';
 
 // Public layout components
 import Navbar from './components/Navbar';
@@ -24,7 +23,7 @@ import Profile from './pages/Profile';
 import NGOProfileForm from './pages/NGOProfileForm';
 import ManageOpportunities from './pages/ManageOpportunities';
 import Matches from './pages/Matches';
-import ChatPage from './pages/ChatPage';
+import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
 import ForgotPassword from './pages/ForgotPassword';
@@ -121,8 +120,7 @@ function App() {
       <Router>
         <AuthProvider>
           <SocketProvider>
-            <NotificationProvider>
-              <Routes>
+            <Routes>
               {/* ── Public routes ── */}
               <Route path="/" element={<LandingRoute />} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -166,6 +164,23 @@ function App() {
                 </DashboardRoute>
               }
             />
+            <Route
+              path="/chat"
+              element={
+                <DashboardRoute pageTitle="Messages">
+                  <Chat />
+                </DashboardRoute>
+              }
+            />
+
+              <Route
+                path="/matches"
+                element={
+                  <DashboardRoute pageTitle="Matches">
+                    <Matches />
+                  </DashboardRoute>
+                }
+              />
               <Route
                 path="/notifications"
                 element={
@@ -178,15 +193,14 @@ function App() {
                 path="/chat"
                 element={
                   <DashboardRoute allowedRoles={['volunteer', 'ngo']} pageTitle="Chat">
-                    <ChatPage />
+                    <Chat />
                   </DashboardRoute>
                 }
               />
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </NotificationProvider>
+            </Routes>
           </SocketProvider>
         </AuthProvider>
       </Router>
