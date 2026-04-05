@@ -122,6 +122,10 @@
     justify-content: center;
 }
 
+.sider-nav-icon .ant-badge {
+    color: inherit;
+}
+
 .sider-nav-label {
     font-size: 0.875rem;
     line-height: 1;

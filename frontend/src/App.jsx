@@ -26,6 +26,8 @@ import Matches from './pages/Matches';
 import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
 import ProtectedRoute from './components/ProtectedRoute';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Ant Design global theme
 const antdTheme = {
@@ -123,6 +125,8 @@ function App() {
               <Route path="/" element={<LandingRoute />} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+              <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+              <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
               <Route path="/organizations" element={<PublicRoute><Organizations /></PublicRoute>} />
               <Route path="/opportunities" element={<SmartOpportunityRoute />} />
               <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />

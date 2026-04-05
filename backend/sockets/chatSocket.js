@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Message from "../models/Message.js";
+import Notification from "../models/Notification.js";
 import { verifySocketToken, canMessage } from "../middleware/auth.js";
 
 /**
@@ -117,10 +118,20 @@ const initChatSocket = (io) => {
           .populate("receiver_id", "name email role")
           .lean();
 
+        // Create Notification
+        const notification = await Notification.create({
+          user: receiver_id,
+          type: "message",
+          title: "New Message",
+          message: `You have a new message from ${populatedMessage.sender_id.name}`,
+        });
+
         // --- Emit to Receiver (if online) ---
         const receiverSocketId = onlineUsers.get(receiver_id);
         if (receiverSocketId) {
           io.to(receiverSocketId).emit("receive_message", populatedMessage);
+          // Also notify them to update their notification bell instantly
+          io.to(receiverSocketId).emit("new_notification", notification);
         }
         // If receiver is offline, message is still persisted in DB
 

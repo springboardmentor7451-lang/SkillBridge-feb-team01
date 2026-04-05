@@ -63,14 +63,21 @@ const Navbar = () => {
         <Header className="app-navbar">
             {/* Logo */}
             <Link to="/" className="navbar-logo">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <svg width="28" height="28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
-                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#60a5fa" />
+                        <linearGradient id="navLogoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#0f6fff" />
                             <stop offset="100%" stopColor="#06b6d4" />
                         </linearGradient>
+                        <linearGradient id="navLogoGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#3b82f6" />
+                            <stop offset="100%" stopColor="#8b5cf6" />
+                        </linearGradient>
                     </defs>
-                    <path d="M21 15c0-4.63-3.08-8.52-7.27-9.7l.95-3.32-1.9-.56L11 7.21 9.22 1.42 7.32 1.98l.95 3.32C4.08 6.48 1 10.37 1 15v4h2v-4c0-4.42 3.58-8 8-8s8 3.58 8 8v4h2v-4z" fill="url(#logoGrad)" />
+                    <rect x="25" y="45" width="18" height="50" rx="6" fill="url(#navLogoGrad1)" />
+                    <rect x="77" y="35" width="18" height="60" rx="6" fill="url(#navLogoGrad2)" />
+                    <path d="M 34 50 C 50 15, 70 15, 86 40" stroke="url(#navLogoGrad1)" stroke-width="14" stroke-linecap="round" fill="none" />
+                    <circle cx="95" cy="22" r="8" fill="#f59e0b" />
                 </svg>
                 <span className="navbar-logo-text">SkillBridge</span>
             </Link>

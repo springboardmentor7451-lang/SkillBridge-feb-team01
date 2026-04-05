@@ -98,6 +98,9 @@ const Login = () => {
                     <Paragraph>
                         Don't have an account? <Link to="/register">Create one</Link>
                     </Paragraph>
+                    <Paragraph>
+                        Forgot your password? <Link to="/forgot-password">Reset it here</Link>
+                    </Paragraph>
                 </div>
             </Card>
         </div>

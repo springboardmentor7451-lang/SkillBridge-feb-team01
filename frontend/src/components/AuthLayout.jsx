@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { API_URL } from '../services/api';
 import './AuthLayout.css';
 
@@ -24,6 +25,7 @@ const { Text } = Typography;
 
 const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
     const { user, token, logout } = useContext(AuthContext);
+    const { socket } = useSocket();
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
@@ -39,6 +41,13 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
         }
     }, [token]);
 
+    useEffect(() => {
+        if (socket) {
+            socket.on('new_notification', fetchNotifications);
+            return () => socket.off('new_notification', fetchNotifications);
+        }
+    }, [socket]);
+
     const fetchNotifications = async () => {
         try {
             const response = await axios.get(`${API_URL}/notifications`, {
@@ -51,6 +60,7 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
                 desc: n.message,
                 time: new Date(n.createdAt).toLocaleDateString() + ' ' + new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 read: n.isRead,
+                type: n.type,
             }));
             setNotifications(formatted);
         } catch (error) {
@@ -58,12 +68,66 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
         }
     };
 
+    // Auto-mark messages as read when visiting chat
+    useEffect(() => {
+        if (location.pathname === '/chat') {
+            const unreadMessages = notifications.filter(n => !n.read && n.type === 'message');
+            if (unreadMessages.length > 0) {
+                unreadMessages.forEach(msg => {
+                    markSingleRead(msg.id);
+                });
+            }
+        }
+    }, [location.pathname, notifications]);
+
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
     const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadMessageCount = notifications.filter(n => !n.read && n.type === 'message').length;
+
+    const renderMessageLabel = () => (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span>Messages</span>
+            {unreadMessageCount > 0 && !collapsed && (
+                <Badge count={unreadMessageCount} size="small" style={{ backgroundColor: '#0f6fff', boxShadow: 'none' }} />
+            )}
+        </div>
+    );
+
+    // Nav items based on role
+    const navItems = user?.role === 'ngo'
+        ? [
+            { key: '/manage-opportunities', icon: <AppstoreOutlined />, label: 'Manage Opportunities' },
+            { key: '/ngo-profile', icon: <BankOutlined />, label: 'NGO Profile' },
+            { 
+                key: '/chat', 
+                icon: (
+                    <Badge count={collapsed ? unreadMessageCount : 0} size="small" dot offset={[2, 0]}>
+                        <MessageOutlined />
+                    </Badge>
+                ), 
+                label: renderMessageLabel(), 
+                tooltipTitle: 'Messages' 
+            },
+        ]
+        : [
+            { key: '/matches', icon: <StarOutlined />, label: 'My Matches' },
+            { key: '/opportunities', icon: <AppstoreOutlined />, label: 'Opportunities' },
+            { key: '/profile', icon: <UserOutlined />, label: 'My Profile' },
+            { 
+                key: '/chat', 
+                icon: (
+                    <Badge count={collapsed ? unreadMessageCount : 0} size="small" dot offset={[2, 0]}>
+                        <MessageOutlined />
+                    </Badge>
+                ), 
+                label: renderMessageLabel(), 
+                tooltipTitle: 'Messages' 
+            },
+        ];
 
     const markAllRead = async () => {
         try {
@@ -97,20 +161,6 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
             console.error('Failed to clear notifications:', error);
         }
     };
-
-    // Nav items based on role
-    const navItems = user?.role === 'ngo'
-        ? [
-            { key: '/manage-opportunities', icon: <AppstoreOutlined />, label: 'Manage Opportunities' },
-            { key: '/ngo-profile', icon: <BankOutlined />, label: 'NGO Profile' },
-            { key: '/chat', icon: <MessageOutlined />, label: 'Messages' },
-        ]
-        : [
-            { key: '/matches', icon: <StarOutlined />, label: 'My Matches' },
-            { key: '/opportunities', icon: <AppstoreOutlined />, label: 'Opportunities' },
-            { key: '/profile', icon: <UserOutlined />, label: 'My Profile' },
-            { key: '/chat', icon: <MessageOutlined />, label: 'Messages' },
-        ];
 
     const notificationItems = [
         {
@@ -207,14 +257,21 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
             >
                 {/* Logo */}
                 <Link to="/" className="sider-logo">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <svg width="28" height="28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                         <defs>
-                            <linearGradient id="sbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#60a5fa" />
+                            <linearGradient id="sbGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#0f6fff" />
                                 <stop offset="100%" stopColor="#06b6d4" />
                             </linearGradient>
+                            <linearGradient id="sbGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#3b82f6" />
+                                <stop offset="100%" stopColor="#8b5cf6" />
+                            </linearGradient>
                         </defs>
-                        <path d="M21 15c0-4.63-3.08-8.52-7.27-9.7l.95-3.32-1.9-.56L11 7.21 9.22 1.42 7.32 1.98l.95 3.32C4.08 6.48 1 10.37 1 15v4h2v-4c0-4.42 3.58-8 8-8s8 3.58 8 8v4h2v-4z" fill="url(#sbGrad)" />
+                        <rect x="25" y="45" width="18" height="50" rx="6" fill="url(#sbGrad1)" />
+                        <rect x="77" y="35" width="18" height="60" rx="6" fill="url(#sbGrad2)" />
+                        <path d="M 34 50 C 50 15, 70 15, 86 40" stroke="url(#sbGrad1)" stroke-width="14" stroke-linecap="round" fill="none" />
+                        <circle cx="95" cy="22" r="8" fill="#f59e0b" />
                     </svg>
                     {!collapsed && <span className="sider-logo-text">SkillBridge</span>}
                 </Link>
@@ -233,13 +290,13 @@ const AuthLayout = ({ children, pageTitle = 'Dashboard' }) => {
                     {navItems.map(item => {
                         const isActive = location.pathname === item.key;
                         return (
-                            <Tooltip key={item.key} title={collapsed ? item.label : ''} placement="right">
+                            <Tooltip key={item.key} title={collapsed ? (item.tooltipTitle || item.label) : ''} placement="right">
                                 <Link
                                     to={item.key}
                                     className={`sider-nav-item${isActive ? ' active' : ''}`}
                                 >
                                     <span className="sider-nav-icon">{item.icon}</span>
-                                    {!collapsed && <span className="sider-nav-label">{item.label}</span>}
+                                    {!collapsed && <span className="sider-nav-label" style={{ width: '100%', display: 'block' }}>{item.label}</span>}
                                 </Link>
                             </Tooltip>
                         );
