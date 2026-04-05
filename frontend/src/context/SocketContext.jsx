@@ -1,67 +1,98 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import AuthContext from './AuthContext';
-import { API_URL } from '../services/api';
 
-const SocketContext = createContext();
+const SocketContext = createContext(null);
+const SOCKET_URL = 'http://localhost:5000';
 
 export const SocketProvider = ({ children }) => {
-    const { user, token } = useContext(AuthContext);
-    const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
+  const activeRoomRef = useRef(null);
+  const [status, setStatus] = useState('connecting');
 
-    useEffect(() => {
-        if (!token) {
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
-            }
-            return;
-        }
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL, {
+        transports: ['websocket'],
+        autoConnect: true,
+        reconnection: true,
+      });
+    }
 
-        const socketClient = io("http://localhost:5000", {
-            autoConnect: false,
-            transports: ['websocket'],
-            auth: {
-                token,
-            },
-        });
+    const socket = socketRef.current;
 
-        socketClient.auth = { token, user }; // keep user available if needed
+    const handleConnect = () => {
+      setStatus('connected');
+      if (activeRoomRef.current) {
+        socket.emit('chat:join', { roomId: activeRoomRef.current });
+      }
+    };
 
-        socketClient.on('connect', () => {
-            console.info('Socket connected', socketClient.id);
-        });
+    const handleDisconnect = () => {
+      setStatus('disconnected');
+    };
 
-        socketClient.on('connect_error', (err) => {
-            console.error('Socket connect error', err);
-        });
+    const handleReconnectAttempt = () => {
+      setStatus('reconnecting');
+    };
 
-        socketClient.on('disconnect', (reason) => {
-            console.info('Socket disconnected', reason);
-        });
+    const handleReconnect = () => {
+      setStatus('connected');
+      if (activeRoomRef.current) {
+        socket.emit('chat:join', { roomId: activeRoomRef.current });
+      }
+    };
 
-        socketClient.connect();
-        setSocket(socketClient);
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.io.on('reconnect_attempt', handleReconnectAttempt);
+    socket.io.on('reconnect', handleReconnect);
 
-        return () => {
-            socketClient.disconnect();
-            setSocket(null);
-        };
-    }, [token, user]);
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.io.off('reconnect_attempt', handleReconnectAttempt);
+      socket.io.off('reconnect', handleReconnect);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, []);
 
-    return (
-        <SocketContext.Provider value={{ socket, isConnected: socket?.connected ?? false }}>
-            {children}
-        </SocketContext.Provider>
-    );
+  const joinRoom = (roomId) => {
+    if (!roomId) return;
+    activeRoomRef.current = roomId;
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('chat:join', { roomId });
+    }
+  };
+
+  const leaveRoom = (roomId) => {
+    if (!roomId) return;
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('chat:leave', { roomId });
+    }
+    if (activeRoomRef.current === roomId) {
+      activeRoomRef.current = null;
+    }
+  };
+
+  const value = useMemo(() => ({
+    socket: socketRef.current,
+    status,
+    joinRoom,
+    leaveRoom,
+  }), [status]);
+
+  return (
+    <SocketContext.Provider value={value}>
+      {children}
+    </SocketContext.Provider>
+  );
 };
 
 export const useSocket = () => {
-    const context = useContext(SocketContext);
-    if (!context) {
-        throw new Error('useSocket must be used within SocketProvider');
-    }
-    return context;
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error('useSocket must be used within a SocketProvider');
+  }
+  return context;
 };
-
-export default SocketContext;

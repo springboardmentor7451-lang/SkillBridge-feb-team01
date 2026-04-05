@@ -12,6 +12,7 @@ import {
     RocketOutlined,
 } from '@ant-design/icons';
 import AuthContext from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
 const { Header } = Layout;
@@ -94,25 +95,28 @@ const Navbar = () => {
             {/* Right side — hidden during loading to prevent flicker */}
             <div className="navbar-right">
                 {loading ? null : user ? (
-                    <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight" arrow>
-                        <Space className="navbar-user" style={{ cursor: 'pointer' }}>
-                            <Avatar
-                                size={36}
-                                style={{
-                                    background: 'linear-gradient(135deg, #0f6fff, #06b6d4)',
-                                    fontSize: '0.95rem',
-                                    fontWeight: 700,
-                                    border: '2px solid rgba(255,255,255,0.2)',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                {user.name?.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Text className="navbar-username" ellipsis>
-                                {user.name}
-                            </Text>
-                        </Space>
-                    </Dropdown>
+                    <Space size={12}>
+                        <NotificationBell />
+                        <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight" arrow>
+                            <Space className="navbar-user" style={{ cursor: 'pointer' }}>
+                                <Avatar
+                                    size={36}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #0f6fff, #06b6d4)',
+                                        fontSize: '0.95rem',
+                                        fontWeight: 700,
+                                        border: '2px solid rgba(255,255,255,0.2)',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {user.name?.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <Text className="navbar-username" ellipsis>
+                                    {user.name}
+                                </Text>
+                            </Space>
+                        </Dropdown>
+                    </Space>
                 ) : (
                     <Space size={8}>
                         <Link to="/login">
